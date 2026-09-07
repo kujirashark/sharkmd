@@ -9,10 +9,25 @@ import { tiptapToMdast } from './tiptap-to-mdast';
 /**
  * Parse a Markdown string into a TipTap-compatible JSONContent document.
  * Combines mdast parsing (with GFM support) and the mdast → TipTap bridge.
+ * On parser failure we fall back to a single code block holding the raw
+ * text so the editor never blanks out on malformed input.
  */
 export function parseMarkdown(text: string): JSONContent {
-  const mdast = unified().use(remarkParse).use(remarkGfm).parse(text);
-  return mdastToTiptap(mdast);
+  try {
+    const mdast = unified().use(remarkParse).use(remarkGfm).parse(text);
+    return mdastToTiptap(mdast);
+  } catch (e) {
+    return {
+      type: 'doc',
+      content: [
+        {
+          type: 'codeBlock',
+          attrs: { language: null },
+          content: [{ type: 'text', text }],
+        },
+      ],
+    };
+  }
 }
 
 /**
