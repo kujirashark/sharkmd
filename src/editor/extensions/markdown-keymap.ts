@@ -13,7 +13,7 @@ export const MarkdownKeymap = Extension.create({
         const href = window.prompt('链接 URL');
         if (!href) return false;
         this.editor.commands.setTextSelection({ from, to });
-        return this.editor.commands.toggleLink({ href });
+        return this.editor.commands.toggleMark('link', { href });
       },
       'Mod-Shift->': () => this.editor.commands.toggleBlockquote(),
     };

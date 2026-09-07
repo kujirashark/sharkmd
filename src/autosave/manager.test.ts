@@ -17,7 +17,9 @@ describe('autosave', () => {
     vi.mocked(tauri.saveFile).mockClear();
     vi.mocked(tauri.saveDraft).mockClear();
   });
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('saves after debounce', async () => {
     useTabsStore.setState({ tabs: [], activeId: null });
