@@ -10,7 +10,7 @@ export async function extractImageFromClipboard(
       const file = it.getAsFile();
       if (!file) continue;
       const buf = new Uint8Array(await file.arrayBuffer());
-      const sourceDir = currentFilePath.replace(/[^/\\]+$/, '');
+      const sourceDir = currentFilePath.replace(/[\\/][^\\/]+$/, '');
       const filename = file.name || 'pasted.png';
       const rel = await tauri.saveAsset(sourceDir, filename, buf);
       return `![image](${rel})`;
