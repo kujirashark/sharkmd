@@ -1,0 +1,33 @@
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #666;
+  --accent: #2563eb;
+  --code-bg: #f4f4f5;
+  --border: #e5e7eb;
+}
+:root[data-theme='dark'] {
+  --bg: #1a1a1a;
+  --fg: #e5e7eb;
+  --muted: #9ca3af;
+  --accent: #60a5fa;
+  --code-bg: #27272a;
+  --border: #374151;
+}
+:root {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+}
+body { margin: 0; }
+.tabs-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--code-bg); }
+.tab { padding: 6px 12px; cursor: pointer; border-right: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+.tab.active { background: var(--bg); }
+.ProseMirror { padding: 24px 48px; line-height: 1.7; max-width: 800px; margin: 0 auto; outline: none; }
+.ProseMirror h1 { font-size: 2em; }
+.ProseMirror h2 { font-size: 1.5em; }
+.ProseMirror code { background: var(--code-bg); padding: 2px 4px; border-radius: 3px; }
+.ProseMirror pre { background: var(--code-bg); padding: 12px; border-radius: 6px; overflow-x: auto; }
+.ProseMirror blockquote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--muted); }
+.ProseMirror a { color: var(--accent); }
