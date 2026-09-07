@@ -3,9 +3,11 @@ use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 pub const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
+
+pub struct WatcherHandle(pub notify::RecommendedWatcher);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -101,8 +103,9 @@ pub async fn watch(path: PathBuf, app: AppHandle) -> AppResult<()> {
     use std::sync::mpsc::channel;
     let (tx, rx) = channel::<notify::Result<Event>>();
 
-    let mut watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
+    let watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
     watcher.watch(&path, RecursiveMode::NonRecursive)?;
+    app.manage(WatcherHandle(watcher));
 
     let app_clone = app.clone();
     std::thread::spawn(move || {
