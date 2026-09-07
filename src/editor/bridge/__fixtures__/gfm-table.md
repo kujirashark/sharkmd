@@ -1,0 +1,5 @@
+| name | age | city |
+| --- | --- | --- |
+| Alice | 30 | NYC |
+| Bob | 25 | LA |
+| Carol | 35 | SF |
