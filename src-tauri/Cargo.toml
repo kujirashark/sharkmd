@@ -30,4 +30,5 @@ dirs = "5"
 chrono = "0.4"
 
 [dev-dependencies]
+tauri = { version = "2", features = ["test"] }
 tempfile = "3"

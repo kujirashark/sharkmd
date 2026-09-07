@@ -1,7 +1,9 @@
 use crate::error::{AppError, AppResult};
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+use tauri::{AppHandle, Emitter};
 
 pub const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
 
@@ -85,4 +87,44 @@ async fn write_atomic(path: &Path, bytes: &[u8]) -> AppResult<()> {
 
 fn mtime_to_ms(t: SystemTime) -> i64 {
     t.duration_since(SystemTime::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0)
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalChange {
+    pub path: String,
+    pub mtime_ms: i64,
+}
+
+#[tauri::command(rename_all = "camelCase")]
+pub async fn watch(path: PathBuf, app: AppHandle) -> AppResult<()> {
+    use std::sync::mpsc::channel;
+    let (tx, rx) = channel::<notify::Result<Event>>();
+
+    let mut watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
+    watcher.watch(&path, RecursiveMode::NonRecursive)?;
+
+    let app_clone = app.clone();
+    std::thread::spawn(move || {
+        for res in rx {
+            if let Ok(ev) = res {
+                if matches!(ev.kind, EventKind::Modify(_) | EventKind::Create(_) | EventKind::Remove(_)) {
+                    for p in ev.paths {
+                        let mtime_ms = std::fs::metadata(&p)
+                            .and_then(|m| m.modified())
+                            .ok()
+                            .and_then(|t| t.duration_since(SystemTime::UNIX_EPOCH).ok())
+                            .map(|d| d.as_millis() as i64)
+                            .unwrap_or(0);
+                        let _ = app_clone.emit(
+                            "fs:external-change",
+                            ExternalChange { path: p.to_string_lossy().into_owned(), mtime_ms },
+                        );
+                    }
+                }
+            }
+        }
+    });
+
+    Ok(())
 }

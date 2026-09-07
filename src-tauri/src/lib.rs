@@ -13,6 +13,7 @@ pub fn run() {
             commands::fs::save_file,
             commands::fs::save_as,
             commands::fs::read_dir,
+            commands::fs::watch,
         ])
         .setup(|_app| {
             log_setup::init();
