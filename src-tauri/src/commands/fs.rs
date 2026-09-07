@@ -4,12 +4,13 @@ use base64::Engine;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::SystemTime;
 use tauri::{AppHandle, Emitter, Manager};
 
 pub const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
 
-pub struct WatcherHandle(pub notify::RecommendedWatcher);
+pub struct WatcherHandle(pub Mutex<Option<RecommendedWatcher>>);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -105,9 +106,17 @@ pub async fn watch(path: PathBuf, app: AppHandle) -> AppResult<()> {
     use std::sync::mpsc::channel;
     let (tx, rx) = channel::<notify::Result<Event>>();
 
-    let watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
+    let mut watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
     watcher.watch(&path, RecursiveMode::NonRecursive)?;
-    app.manage(WatcherHandle(watcher));
+    // Replace any previously installed watcher so the old OS handle and
+    // background thread are dropped deterministically (Tauri's manage()
+    // panics on duplicate state for the same type, so we hold an interior
+    // Mutex<Option<...>> and swap it in place).
+    if let Some(state) = app.try_state::<WatcherHandle>() {
+        *state.0.lock().unwrap() = Some(watcher);
+    } else {
+        app.manage(WatcherHandle(Mutex::new(Some(watcher))));
+    }
 
     let app_clone = app.clone();
     std::thread::spawn(move || {
