@@ -47,7 +47,7 @@ pub async fn save_file(path: PathBuf, content: String) -> AppResult<SaveResult> 
     Ok(SaveResult { mtime_ms: mtime_to_ms(mtime) })
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn save_as(src_path: PathBuf, dest_path: PathBuf, content: String) -> AppResult<SaveResult> {
     if let Some(parent) = dest_path.parent() {
         tokio::fs::create_dir_all(parent).await?;
