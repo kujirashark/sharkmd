@@ -18,6 +18,10 @@ export function AppLayout() {
   const updateContent = useTabsStore((s) => s.updateContent);
   const [rootPath, setRootPath] = useState<string>('');
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
+  // Path → wall-clock timestamp of our last successful save. Used to
+  // suppress the watcher event fired by our own atomic write so the user
+  // isn't immediately prompted about their own save.
+  const lastSaveAtRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     tauri.getSettings().then((s) => {
@@ -36,6 +40,9 @@ export function AppLayout() {
     }
     autoSaveRef.current = createAutoSave({
       getTab: () => useTabsStore.getState().tabs.find((t) => t.id === activeId),
+      onSave: (path) => {
+        lastSaveAtRef.current.set(path, Date.now());
+      },
     });
     return () => {
       autoSaveRef.current?.stop();
@@ -57,6 +64,12 @@ export function AppLayout() {
         );
         if (!cur) return;
         if (path !== cur.path) return;
+        // Suppress the watcher event triggered by our own atomic save:
+        // if the event arrives within 1.5s of our recorded save and the
+        // reported mtime is no newer than what we just wrote, treat it
+        // as self-induced and skip the prompt.
+        const lastSavedAt = lastSaveAtRef.current.get(path) ?? 0;
+        if (Date.now() - lastSavedAt < 1500 && mtimeMs <= cur.mtimeMs + 1) return;
         if (mtimeMs <= cur.mtimeMs) return;
         const ok = window.confirm(
           `文件已被外部修改：${path}\n是否重新加载磁盘版本？\n（取消将保留当前编辑）`,
