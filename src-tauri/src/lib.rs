@@ -14,6 +14,7 @@ pub fn run() {
             commands::fs::save_as,
             commands::fs::read_dir,
             commands::fs::watch,
+            commands::fs::save_asset,
             commands::draft::save_draft,
             commands::draft::list_drafts,
             commands::draft::delete_draft,

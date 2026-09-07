@@ -1,4 +1,6 @@
 use crate::error::{AppError, AppResult};
+#[allow(unused_imports)]
+use base64::Engine;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -130,4 +132,23 @@ pub async fn watch(path: PathBuf, app: AppHandle) -> AppResult<()> {
     });
 
     Ok(())
+}
+
+#[tauri::command(rename_all = "camelCase")]
+pub async fn save_asset(source_dir: PathBuf, filename: String, bytes: Vec<u8>) -> AppResult<String> {
+    let ext = std::path::Path::new(&filename)
+        .extension().and_then(|s| s.to_str()).unwrap_or("png").to_string();
+    let dir = source_dir.join("assets");
+    tokio::fs::create_dir_all(&dir).await?;
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash = hex::encode(hasher.finalize());
+    let safe_name = format!("{}.{}", &hash[..16], ext);
+    let target = dir.join(&safe_name);
+    if !target.exists() {
+        tokio::fs::write(&target, &bytes).await?;
+    }
+    let rel = format!("./assets/{}", safe_name);
+    Ok(rel)
 }
