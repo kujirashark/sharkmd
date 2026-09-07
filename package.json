@@ -30,6 +30,7 @@
     "react-dom": "^18.2.0",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
     "unified": "^11.0.5",
     "zustand": "^4.5.0"
   },
