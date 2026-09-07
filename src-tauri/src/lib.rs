@@ -14,6 +14,11 @@ pub fn run() {
             commands::fs::save_as,
             commands::fs::read_dir,
             commands::fs::watch,
+            commands::draft::save_draft,
+            commands::draft::list_drafts,
+            commands::draft::delete_draft,
+            commands::settings::get_settings,
+            commands::settings::set_settings,
         ])
         .setup(|_app| {
             log_setup::init();
