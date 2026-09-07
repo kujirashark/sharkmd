@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { TabsBar } from '../tabs/TabsBar';
 import { FileTree } from '../sidebar/FileTree';
 import { Outline, extractHeadings } from '../sidebar/Outline';
@@ -41,6 +42,40 @@ export function AppLayout() {
       autoSaveRef.current = null;
     };
   }, [activeId]);
+
+  // Listen for external file changes emitted by the Rust watcher.
+  // If the changed file matches the currently active tab and the new
+  // mtime is newer than ours, prompt the user to either reload from disk
+  // or keep the in-memory edits.
+  useEffect(() => {
+    const un = listen<{ path: string; mtimeMs: number }>(
+      'fs:external-change',
+      async (event) => {
+        const { path, mtimeMs } = event.payload;
+        const cur = useTabsStore.getState().tabs.find(
+          (t) => t.id === useTabsStore.getState().activeId,
+        );
+        if (!cur) return;
+        if (path !== cur.path) return;
+        if (mtimeMs <= cur.mtimeMs) return;
+        const ok = window.confirm(
+          `文件已被外部修改：${path}\n是否重新加载磁盘版本？\n（取消将保留当前编辑）`,
+        );
+        if (!ok) return;
+        try {
+          const fc = await tauri.openFile(path);
+          const json = parseMarkdown(fc.text);
+          useTabsStore.getState().updateContent(cur.id, json, false);
+          useTabsStore.getState().setMtime(cur.id, fc.mtimeMs);
+        } catch {
+          // MVP：失败静默，后续接入 toast 通知
+        }
+      },
+    );
+    return () => {
+      un.then((f) => f());
+    };
+  }, []);
 
   const active = tabs.find((t) => t.id === activeId);
   const headings = active ? extractHeadings(active.content) : [];
