@@ -1,5 +1,5 @@
-mod error;
-mod log_setup;
+pub mod error;
+pub mod log_setup;
 mod commands;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
