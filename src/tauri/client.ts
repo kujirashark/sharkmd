@@ -1,0 +1,25 @@
+import { invoke } from '@tauri-apps/api/core';
+
+export interface FileContent { text: string; size: number; mtimeMs: number }
+export interface SaveResult { mtimeMs: number }
+export interface DirEntry { name: string; path: string; isDir: boolean; isMd: boolean }
+export interface DraftEntry { fileId: string; path: string; savedAtMs: number }
+export interface Settings { theme: string; fontSize: number; customCssPath: string | null }
+export interface AppError { code: string; message: string; detail: string | null }
+
+export const tauri = {
+  openFile: (path: string) => invoke<FileContent>('open_file', { path }),
+  saveFile: (path: string, content: string) => invoke<SaveResult>('save_file', { path, content }),
+  saveAs: (srcPath: string, destPath: string, content: string) =>
+    invoke<SaveResult>('save_as', { srcPath, destPath, content }),
+  readDir: (path: string) => invoke<DirEntry[]>('read_dir', { path }),
+  watch: (path: string) => invoke<void>('watch', { path }),
+  saveDraft: (fileId: string, json: string, path?: string | null) =>
+    invoke<void>('save_draft', { fileId, json, path: path ?? null }),
+  listDrafts: () => invoke<DraftEntry[]>('list_drafts'),
+  deleteDraft: (fileId: string) => invoke<void>('delete_draft', { fileId }),
+  getSettings: () => invoke<Settings>('get_settings'),
+  setSettings: (s: Settings) => invoke<void>('set_settings', { s }),
+  saveAsset: (sourceDir: string, filename: string, bytes: Uint8Array) =>
+    invoke<string>('save_asset', { sourceDir, filename, bytes: Array.from(bytes) }),
+} as const;
