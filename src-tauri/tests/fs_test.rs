@@ -45,7 +45,7 @@ async fn read_dir_returns_md_files_and_dirs_sorted() {
     let names: Vec<_> = entries.iter().map(|e| e.name.as_str()).collect();
     assert_eq!(names, vec!["a.md", "b.md", "sub"]);
     assert!(entries[0].is_md);
-    assert!(!entries[2].is_dir);
+    assert!(!entries[2].is_md);
     // sub is dir
     let sub = entries.iter().find(|e| e.name == "sub").unwrap();
     assert!(sub.is_dir);
