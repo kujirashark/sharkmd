@@ -82,6 +82,21 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath, initia
     if (!editor) return;
     if (value === lastEmittedRef.current) return; // our own update, skip
     if (value === lastAppliedRef.current) return; // already applied
+    // Deep-equality guard: protects against a parent that re-creates the
+    // wrapper object (React 18 strict-mode double-render, setState batching)
+    // carrying the same doc. Without this, the second pass would call
+    // setContent(value, false) and clobber any in-progress edit the user
+    // just made (e.g. press Enter right after inserting a table).
+    // Cheap for our doc sizes (< few KB).
+    const current = editor.getJSON();
+    if (
+      current.type === value.type &&
+      JSON.stringify(current.content ?? []) === JSON.stringify(value.content ?? [])
+    ) {
+      lastEmittedRef.current = value;
+      lastAppliedRef.current = value;
+      return;
+    }
     lastAppliedRef.current = value;
     editor.commands.setContent(value, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
