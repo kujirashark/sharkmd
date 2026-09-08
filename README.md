@@ -16,13 +16,24 @@
 - **粘贴 Markdown 自动格式化**
 - **拖拽 / 粘贴图片自动保存到 `<fileDir>/assets/`**
 
+### 任务列表 / 数学 / 图表（v0.2）
+- **GFM 任务列表** —— `- [ ]` / `- [x]` 渲染为紫色 ☐ / ☑ checkbox，点击切换
+- **KaTeX 行内 + 块级公式** —— `$E=mc^2$` / `$$...$$` 实时渲染；双击进入源码编辑
+- **Mermaid 图表** —— ` ```mermaid ` 代码块自动渲染为 SVG；双击编辑源
+- **Shiki 代码高亮** —— 14 种语言，与 VSCode 同款主题
+
 ### 文件管理
 - **多标签页** —— 同时打开多个文件，标签可关闭
 - **文件树** —— 递归展开/折叠的目录树，懒加载
-- **侧栏双 tab** —— 文件 / 大纲（点击大纲项跳转到对应 heading）
+- **侧栏三 tab** —— 文件 / 大纲 / 图片（点击大纲跳转；点击图片插入 `![name](./assets/...)`）
 - **新建 .md** —— 一键创建
 - **Ctrl+O 打开** —— 原生文件选择器
 - **记住工作目录** —— 重启自动恢复
+
+### 文档导出（三格式）
+- **HTML** —— 内联 CSS + GitHub 主题（light/dark），双击直接浏览器打开
+- **PDF** —— 调用 WebView2 原生 `PrintToPdfAsync`，无需弹窗、100% 离线、可指定任意路径
+- **Word（.docx）** —— 真 OOXML（ECMA-376），用 `docx` npm 包生成，Word 2016+ / WPS / LibreOffice / Google Docs 全部直接打开
 
 ### 数据安全
 - **自动保存** —— 编辑后 300ms 静默写盘，tab 显示脏标记
@@ -31,7 +42,8 @@
 - **外部修改检测** —— 别的程序改了你的文件，弹窗问"加载外部版 / 保留我的"
 
 ### 编辑器增强
-- **查找 / 替换** —— Ctrl+F 打开，Enter 跳下一个，Esc 关闭
+- **查找 / 替换（v0.2 增强）** —— Ctrl+F 打开，Enter 跳下一个，Esc 关闭；支持**正则**（`.*` 切换）和**区分大小写**（`Aa` 切换）
+- **多光标（v0.2）** —— Ctrl+D 选中当前词后再次按下跳到下一匹配，逐个加选区
 - **行/列位置** —— 底部状态栏实时显示光标 Ln N, Col M
 - **字数统计** —— 实时显示词数 / 字符数
 - **主题切换** —— 浅色 / 深色
@@ -103,8 +115,8 @@
 | 多端（Win/macOS/Linux） | 🔜 | ✅ | ✅ | ✅ | ✅ |
 | 插件系统 | 🔜 v1.0 | ⚠️ 第三方 | ✅ | ❌ | ✅ |
 | 同步到云 | 🔜 v1.0 | ⚠️ iCloud | ✅ Obsidian Sync | ❌ | ⚠️ |
-| KaTeX 数学 | 🔜 v0.2 | ✅ | ✅ | ❌ | ✅ |
-| Mermaid 图表 | 🔜 v0.2 | ✅ | ✅ | ❌ | ✅ |
+| KaTeX 数学 | ✅ v0.2 | ✅ | ✅ | ❌ | ✅ |
+| Mermaid 图表 | ✅ v0.2 | ✅ | ✅ | ❌ | ✅ |
 | 价格 | 免费 + MIT | $15 一次性 | 免费（同步付费） | 免费 + MIT | 免费 |
 
 ---
@@ -145,10 +157,11 @@ pnpm tauri build
 ## 🧪 测试
 
 ```bash
-pnpm test              # 跑 49 个 Vitest 单元测试
+pnpm test              # 跑 59 个 Vitest 单元/集成测试
 pnpm test:watch        # 监听模式
 pnpm test:coverage     # 生成 coverage 报告（html/）
 pnpm test:e2e          # Playwright E2E（需 tauri-driver）
+cargo test --manifest-path src-tauri/Cargo.toml  # 6 个 Rust 集成测试
 ```
 
 ### 测试覆盖
@@ -156,6 +169,8 @@ pnpm test:e2e          # Playwright E2E（需 tauri-driver）
 - **编辑器桥接** —— 13 个 roundtrip + 5 个 mdast→tiptap + 4 个 tiptap→mdast = **22 个 roundtrip 黄金测试**，覆盖所有 MVP Markdown 语法 + 任务列表 + KaTeX 数学
 - **输入规则** —— 8 个测试覆盖每条 `# `、`**`、`` ` ``、`[` 等规则
 - **粘贴检测** —— 2 个测试覆盖 Markdown 粘贴检测
+- **导出 DOCX** —— 7 个测试用 jszip 解开 .docx 验证 zip magic bytes / `[Content_Types].xml` / `word/document.xml` / checkbox Unicode / 表格结构 / math / mermaid fallback
+- **React 编辑器回归** —— `Editor.test.tsx` 包含 3 个测试：初始挂载 / 插入表格保留前文段落 / Enter 分裂段落为两个
 - **Rust 后端** —— 6 个 cargo test 覆盖 fs/draft/settings/外部修改监听
 - **UI 状态** —— tabs / theme / autosave / recovery / file tree 各组件
 
@@ -168,7 +183,10 @@ pnpm test:e2e          # Playwright E2E（需 tauri-driver）
 ```
 ┌─────────────────────────────────────────┐
 │  Tauri 2 (Rust)                          │
-│   ├─ commands/fs (open/save/save_as/...)  │
+│   ├─ commands/fs (open/save/save_as/    │
+│   │              save_binary_file/...)  │
+│   ├─ commands/print (PDF via WebView2   │
+│   │                  PrintToPdfAsync)   │
 │   ├─ commands/draft (崩溃恢复)            │
 │   ├─ commands/settings (主题/上次目录)    │
 │   └─ watch (notify crate, 外部修改监听)  │
@@ -176,14 +194,15 @@ pnpm test:e2e          # Playwright E2E（需 tauri-driver）
                    │ Tauri IPC (typed)
 ┌──────────────────▼──────────────────────┐
 │  React 18 + TypeScript                   │
-│   ├─ editor/  (TipTap + 桥接 + 扩展)     │
-│   ├─ tabs/    (Zustand 状态)              │
-│   ├─ sidebar/ (文件树 + 大纲)            │
-│   ├─ theme/   (CSS 变量)                │
-│   ├─ assets/  (图片粘贴)                │
-│   ├─ autosave/(300ms debounce)           │
-│   └─ app/     (AppShell + MenuBar +     │
-│                StatusBar + FindBar)      │
+│   ├─ editor/    (TipTap + 桥接 + 扩展)   │
+│   ├─ export/    (HTML / PDF / DOCX)     │
+│   ├─ tabs/      (Zustand 状态)            │
+│   ├─ sidebar/   (文件树 + 大纲 + 图片)   │
+│   ├─ theme/     (CSS 变量)              │
+│   ├─ assets/    (图片粘贴 + 哈希命名)    │
+│   ├─ autosave/  (300ms debounce)         │
+│   └─ app/       (AppShell + MenuBar +   │
+│                  StatusBar + FindBar)    │
 └─────────────────────────────────────────┘
 ```
 
@@ -228,17 +247,21 @@ sharkmd/
 │  ├─ editor/                    # 编辑器核心
 │  │  ├─ Editor.tsx              # React wrapper
 │  │  ├─ Toolbar.tsx             # 格式工具栏
-│  │  ├─ FindBar.tsx             # 查找替换
+│  │  ├─ FindBar.tsx             # 查找替换（v0.2：正则/区分大小写/多光标）
 │  │  ├─ schema/                 # ProseMirror schema (16 nodes + 5 marks)
 │  │  ├─ bridge/                 # MDAST ↔ TipTap 双向桥接
-│  │  └─ extensions/             # 输入规则、粘贴、快捷键
+│  │  └─ extensions/             # 输入规则、粘贴、快捷键、math、mermaid
+│  ├─ export/                    # 文档导出
+│  │  ├─ export-html.ts          # → .html（github-light/github-dark）
+│  │  ├─ export-docx.ts          # → .docx（真 OOXML，Word 2016+/WPS 兼容）
+│  │  └─ export-docx.test.ts     # jszip 解压验证
 │  ├─ tabs/                      # 多标签 store
-│  ├─ sidebar/                   # 文件树 + 大纲
+│  ├─ sidebar/                   # 文件树 + 大纲 + 图片管理
 │  ├─ theme/                     # 主题 CSS
-│  ├─ assets/                    # 图片处理
+│  ├─ assets/                    # 图片处理（粘贴 → <fileDir>/assets/）
 │  ├─ autosave/                  # 300ms debounce 自动保存
 │  ├─ crash-recovery/            # 崩溃恢复对话框
-│  ├─ tauri/                     # IPC 客户端
+│  ├─ tauri/                     # IPC 客户端（saveFile / saveBinaryFile / printToPdf）
 │  └─ utils/                     # 工具（hashPath, etc.）
 ├─ src-tauri/                    # Rust 后端
 │  ├─ src/
@@ -247,7 +270,9 @@ sharkmd/
 │  │  ├─ error.rs                # AppError 类型
 │  │  ├─ log_setup.rs            # 日志
 │  │  └─ commands/
-│  │     ├─ fs.rs                # open/save/save_as/read_dir/watch/save_asset
+│  │     ├─ fs.rs                # open/save/save_as/save_binary_file/
+│  │     │                       #   read_dir/watch/save_asset
+│  │     ├─ print.rs             # print_to_pdf（WebView2 PrintToPdfAsync）
 │  │     ├─ draft.rs             # save/list/delete draft
 │  │     └─ settings.rs          # get/set settings
 │  ├─ tests/                     # 6 个 cargo 集成测试
@@ -268,6 +293,22 @@ sharkmd/
 ├─ vite.config.ts
 └─ README.md
 ```
+
+---
+
+## 📤 导出格式
+
+| 格式 | 后缀 | 实现 | 优势 | 限制 |
+|---|---|---|---|---|
+| **HTML** | `.html` | 内联 CSS + GitHub 主题 | 双击浏览器直接打开；体积小 | 无原生 PDF/打印样式；需要浏览器渲染 |
+| **PDF** | `.pdf` | WebView2 `ICoreWebView2_7::PrintToPdfAsync` | **无需弹窗**、100% 离线、可指定任意路径；分页由浏览器决定 | 仅 Windows（macOS/Linux 暂未实现） |
+| **Word** | `.docx` | `docx` npm 包生成真 OOXML zip（ECMA-376） | **Word 2016+ / WPS / LibreOffice / Google Docs** 全部直接打开；保留标题、表格、checkbox、代码块样式 | math 公式降级为 LaTeX 源码（v3 计划引入 OMML）；mermaid 降级为带框文本 |
+
+**为什么 Word 不再是 `.doc + MSO PI`？**
+v0.1 早期方案用 HTML+MSO PI 假冒 .doc，Word 2016+ 越来越严格会显示源码，WPS 兼容性参差不齐。v0.2 改为**真 OOXML**，符合 ECMA-376 / ISO/IEC 29500 国际标准。
+
+**为什么 PDF 不再走 `window.print()`？**
+Tauri 2 的 WebView2 沙箱阻止弹窗，`window.open()` 和 `window.print()` 都被拦截。v0.2 用 `webview2-com` crate 直接调原生 `PrintToPdfAsync` IPC 命令，绕过弹窗。
 
 ---
 
@@ -341,10 +382,11 @@ sharkmd/
 - [x] **KaTeX 数学公式** `$E=mc^2$` 实时渲染（双击进入编辑）
 - [x] **Mermaid 图表** ` ```mermaid ` 代码块自动渲染为 SVG（双击编辑源）
 - [x] **Shiki 代码语法高亮** ts/js/json/python/rust/go 等 14 种语言，与 VSCode 同款
-- [x] **文档导出** HTML / PDF（浏览器打印） / Word（.doc HTML）三格式
+- [x] **文档导出三格式** HTML（GitHub 主题）/ PDF（**WebView2 原生 PrintToPdf**）/ Word（**.docx 真 OOXML**，Word 2016+/WPS 兼容）
 - [x] **查找增强** 正则（`.*`） + 区分大小写（`Aa`） 切换
 - [x] **多光标** Ctrl+D 跳到下一匹配
 - [x] **图片管理面板** 侧栏切到"图片"tab，列出 `<fileDir>/assets/`，点击插入 `![name](./assets/...)`
+- [x] **编辑器稳定性修复** Enter 换行（math NodeView `contentEditable={false}`）/ 插入表格保留前文（受控模式深相等守卫）/ 图片粘贴落盘（`MarkdownPaste` 接 `image/*` items）
 
 ### 🚀 v1.0（中期）
 - [ ] **插件系统**：用户自定义扩展

@@ -23,7 +23,7 @@ describe('<Editor>', () => {
       ],
     };
     let captured: TiptapEditor | null = null;
-    const { container } = render(
+    render(
       <Editor value={initial} onChange={() => {}} onEditorReady={(e) => (captured = e)} />,
     );
     expect(captured).toBeTruthy();
