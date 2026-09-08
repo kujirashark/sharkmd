@@ -91,6 +91,14 @@ export function AppLayout() {
           (t) => t.id === useTabsStore.getState().activeId,
         );
         if (!cur || path !== cur.path) return;
+        // Suppress events triggered by our OWN autosave. The OS notify
+        // watcher fires on the rename inside atomic write BEFORE
+        // saveFile's promise resolves, so the listener may receive the
+        // self-induced event before lastSaveAtRef is updated. The
+        // `pendingWrites` set is mutated synchronously inside
+        // createAutoSave.run() before any await, giving us a reliable
+        // "this is our own write" signal here.
+        if (autoSaveRef.current?.isOurWrite(path)) return;
         const lastSavedAt = lastSaveAtRef.current.get(path) ?? 0;
         if (Date.now() - lastSavedAt < 1500 && mtimeMs <= cur.mtimeMs + 1) return;
         if (mtimeMs <= cur.mtimeMs) return;
