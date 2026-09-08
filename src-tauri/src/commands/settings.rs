@@ -9,6 +9,8 @@ pub struct Settings {
     pub theme: String,
     pub font_size: u32,
     pub custom_css_path: Option<String>,
+    #[serde(default)]
+    pub last_root_path: Option<String>,
 }
 
 pub fn settings_path() -> PathBuf {
@@ -23,6 +25,7 @@ pub async fn get_settings() -> AppResult<Settings> {
             theme: "light".into(),
             font_size: 16,
             custom_css_path: None,
+            last_root_path: None,
         });
     }
     let bytes = tokio::fs::read(&p).await?;
