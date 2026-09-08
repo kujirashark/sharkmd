@@ -69,3 +69,33 @@ pub async fn delete_draft(file_id: String) -> AppResult<()> {
     }
     Ok(())
 }
+
+/// Returns the full draft metadata (including the JSON content the
+/// editor needs to restore the tab). Kept separate from `list_drafts`
+/// because drafts can hold sizable JSON trees; only fetch the payload
+/// when the user actually clicks "Restore".
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DraftPayload {
+    pub file_id: String,
+    pub path: String,
+    pub saved_at_ms: i64,
+    pub json: String,
+}
+
+#[tauri::command(rename_all = "camelCase")]
+pub async fn read_draft(file_id: String) -> AppResult<DraftPayload> {
+    let p = draft_path(&file_id);
+    if !p.exists() {
+        return Err(AppError::new("draft_not_found", format!("draft {} 不存在", file_id)));
+    }
+    let bytes = tokio::fs::read(&p).await?;
+    let v: serde_json::Value = serde_json::from_slice(&bytes)
+        .map_err(|e| AppError::new("draft_corrupt", format!("draft JSON 损坏: {}", e)))?;
+    Ok(DraftPayload {
+        file_id: v.get("file_id").and_then(|x| x.as_str()).unwrap_or("").to_string(),
+        path: v.get("path").and_then(|x| x.as_str()).unwrap_or("").to_string(),
+        saved_at_ms: v.get("saved_at_ms").and_then(|x| x.as_i64()).unwrap_or(0),
+        json: v.get("json").and_then(|x| x.as_str()).unwrap_or("").to_string(),
+    })
+}

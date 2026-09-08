@@ -4,6 +4,7 @@ export interface FileContent { text: string; size: number; mtimeMs: number }
 export interface SaveResult { mtimeMs: number }
 export interface DirEntry { name: string; path: string; isDir: boolean; isMd: boolean }
 export interface DraftEntry { fileId: string; path: string; savedAtMs: number }
+export interface DraftPayload extends DraftEntry { json: string }
 export interface Settings { theme: string; fontSize: number; customCssPath: string | null; lastRootPath?: string | null; language?: string }
 export interface AppError { code: string; message: string; detail: string | null }
 export interface MdFileEntry { path: string; relPath: string; size: number; mtimeMs: number }
@@ -22,6 +23,7 @@ export const tauri = {
   saveDraft: (fileId: string, json: string, path?: string | null) =>
     invoke<void>('save_draft', { fileId, json, path: path ?? null }),
   listDrafts: () => invoke<DraftEntry[]>('list_drafts'),
+  readDraft: (fileId: string) => invoke<DraftPayload>('read_draft', { fileId }),
   deleteDraft: (fileId: string) => invoke<void>('delete_draft', { fileId }),
   getSettings: () => invoke<Settings>('get_settings'),
   setSettings: (s: Settings) => invoke<void>('set_settings', { s }),

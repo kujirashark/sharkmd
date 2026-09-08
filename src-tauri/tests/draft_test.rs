@@ -21,6 +21,34 @@ async fn draft_round_trip() {
 }
 
 #[tokio::test]
+async fn draft_read_returns_full_payload() {
+    // Regression: v0.2 RecoveryDialog had no "Restore" button because
+    // the frontend had no way to fetch the saved JSON. v0.3 adds
+    // `read_draft` so the UI can offer one-click recovery.
+    let fid = format!("test_read_{}", std::process::id());
+    let path = std::env::temp_dir().join("sharkmd_test_read.md");
+    let _ = std::fs::remove_file(draft::draft_path(&fid));
+
+    let payload = r#"{"type":"doc","content":[{"type":"paragraph"}]}"#;
+    draft::save_draft(fid.clone(), payload.into(), Some(path.to_string_lossy().into_owned()))
+        .await
+        .unwrap();
+
+    let got = draft::read_draft(fid.clone()).await.unwrap();
+    assert_eq!(got.file_id, fid);
+    assert_eq!(got.path, path.to_string_lossy());
+    assert_eq!(got.json, payload);
+    assert!(got.saved_at_ms > 0, "savedAtMs should be set");
+
+    // Missing file → error
+    let missing = format!("test_missing_{}", std::process::id());
+    assert!(draft::read_draft(missing).await.is_err());
+
+    // Cleanup
+    let _ = draft::delete_draft(fid).await;
+}
+
+#[tokio::test]
 async fn settings_default_and_persist() {
     let _ = std::fs::remove_file(settings::settings_path());
     let s1 = settings::get_settings().await.unwrap();

@@ -190,6 +190,9 @@ const zhCN = {
     title: '检测到未保存的会话',
     discard: '丢弃',
     close: '关闭',
+    restore: '恢复',
+    restoring: '恢复中…',
+    empty: '没有可恢复的草稿',
   },
   theme: {
     light: '浅色',

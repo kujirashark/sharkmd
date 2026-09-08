@@ -182,6 +182,9 @@ const enUS = {
     title: 'Unsaved sessions detected',
     discard: 'Discard',
     close: 'Close',
+    restore: 'Restore',
+    restoring: 'Restoring…',
+    empty: 'No drafts to restore',
   },
   theme: {
     light: 'Light',

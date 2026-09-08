@@ -18,6 +18,7 @@ pub fn run() {
             commands::print::print_to_pdf,
             commands::draft::save_draft,
             commands::draft::list_drafts,
+            commands::draft::read_draft,
             commands::draft::delete_draft,
             commands::settings::get_settings,
             commands::settings::set_settings,
