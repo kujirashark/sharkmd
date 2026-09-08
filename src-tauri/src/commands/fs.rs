@@ -1,12 +1,10 @@
 use crate::error::{AppError, AppResult};
-#[allow(unused_imports)]
-use base64::Engine;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::SystemTime;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 pub const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
 
@@ -102,7 +100,7 @@ pub struct ExternalChange {
 }
 
 #[tauri::command(rename_all = "camelCase")]
-pub async fn watch(path: PathBuf, app: AppHandle) -> AppResult<()> {
+pub async fn watch<R: Runtime>(path: PathBuf, app: AppHandle<R>) -> AppResult<()> {
     use std::sync::mpsc::channel;
     let (tx, rx) = channel::<notify::Result<Event>>();
 

@@ -744,7 +744,7 @@ async fn read_dir_returns_md_files_and_dirs_sorted() {
     let names: Vec<_> = entries.iter().map(|e| e.name.as_str()).collect();
     assert_eq!(names, vec!["a.md", "b.md", "sub"]);
     assert!(entries[0].is_md);
-    assert!(!entries[2].is_dir);
+    assert!(!entries[2].is_md);
     // sub is dir
     let sub = entries.iter().find(|e| e.name == "sub").unwrap();
     assert!(sub.is_dir);
@@ -1038,7 +1038,7 @@ git commit -m "feat(rust): watch command emits fs:external-change on file modify
 **Interfaces:**
 - Produces:
   - `commands::draft`:
-    - `save_draft(file_id: String, json: String) -> AppResult<()>`：写入 `${dataDir}/draft/${file_id}.json`
+    - `save_draft(file_id: String, json: String, path: Option<String>) -> AppResult<()>`：写入 `${dataDir}/draft/${file_id}.json`；`path` 可选，用于 list 时显示（Task 5 实施者扩展了原签名以修复 brief 内部矛盾）
     - `list_drafts() -> AppResult<Vec<DraftEntry>>`：`DraftEntry { file_id, path, saved_at_ms }`
     - `delete_draft(file_id: String) -> AppResult<()>`
   - `commands::settings`:
