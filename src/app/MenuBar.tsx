@@ -114,8 +114,15 @@ export function MenuBar({
           const current = tabs.find((t) => t.id === activeId);
           const baseName = current ? current.title.replace(/\.md$/i, '') : 'untitled';
           const theme = useThemeStore.getState().theme === 'dark' ? 'github-dark' : 'github-light';
+          const dest = await saveDialog({
+            title: '导出为 PDF',
+            defaultPath: baseName + '.pdf',
+            filters: [{ name: 'PDF', extensions: ['pdf'] }],
+          });
+          if (typeof dest !== 'string' || !dest) return;
           try {
-            await exportToPDF(editor.getJSON(), { title: baseName, theme });
+            await exportToPDF(editor.getJSON(), { title: baseName, theme }, dest);
+            window.alert(`已导出到 ${dest}`);
           } catch (e) {
             window.alert(`PDF 导出失败: ${e}`);
           }

@@ -3225,6 +3225,8 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "tokio",
+ "webview2-com",
+ "windows-core",
 ]
 
 [[package]]

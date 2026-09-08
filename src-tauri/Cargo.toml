@@ -30,6 +30,10 @@ percent-encoding = "2"
 dirs = "6"
 chrono = "0.4"
 
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.38"
+windows-core = "0.61"
+
 [dev-dependencies]
 tauri = { version = "=2.10.3", features = ["test"] }
 tempfile = "3"

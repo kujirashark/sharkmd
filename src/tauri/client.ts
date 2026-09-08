@@ -24,4 +24,5 @@ export const tauri = {
   setSettings: (s: Settings) => invoke<void>('set_settings', { s }),
   saveAsset: (sourceDir: string, filename: string, bytes: Uint8Array) =>
     invoke<string>('save_asset', { sourceDir, filename, bytes: Array.from(bytes) }),
+  printToPdf: (path: string) => invoke<string>('print_to_pdf', { path }),
 } as const;

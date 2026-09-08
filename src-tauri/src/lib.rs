@@ -15,6 +15,7 @@ pub fn run() {
             commands::fs::read_dir,
             commands::fs::watch,
             commands::fs::save_asset,
+            commands::print::print_to_pdf,
             commands::draft::save_draft,
             commands::draft::list_drafts,
             commands::draft::delete_draft,

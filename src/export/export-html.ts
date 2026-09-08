@@ -2,6 +2,7 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { createHighlighter, type Highlighter } from 'shiki';
 import type { JSONContent } from '@tiptap/core';
+import { tauri } from '../tauri/client';
 
 let highlighterPromise: Promise<Highlighter> | null = null;
 function getHighlighter(): Promise<Highlighter> {
@@ -200,22 +201,63 @@ ${body}
 }
 
 /**
- * Trigger the browser print dialog. The user can pick "Save as PDF" in the
- * destination dropdown to produce a PDF. This is the lightest possible
- * PDF path (no extra deps); the HTML rendered is the same as exportToHTML().
+ * Render the document as PDF using the WebView2 native PrintToPdf pipeline.
+ *
+ * Strategy:
+ *   1. Build a fullscreen iframe with `srcdoc = html` and inject into <body>.
+ *   2. Wait for iframe.onload (HTML fully parsed; KaTeX/Shiki are sync so this
+ *      means the page is visually complete).
+ *   3. Call the Tauri command `print_to_pdf(path)` which screenshots the entire
+ *      webview (including iframe) into a real PDF file on disk.
+ *   4. Remove the iframe.
+ *
+ * Tauri's WebView2 PrintToPdf runs entirely in-process — no popup, no extra
+ * browser window, no user dialog. Output is identical to what Word/Edge would
+ * produce when printing to "Microsoft Print to PDF".
  */
-export async function exportToPDF(doc: JSONContent, opts: ExportOptions): Promise<void> {
+export async function exportToPDF(doc: JSONContent, opts: ExportOptions, destPath: string): Promise<void> {
   const html = await exportToHTML(doc, opts);
-  const win = window.open('', '_blank', 'width=900,height=1200');
-  if (!win) {
-    throw new Error('无法打开打印窗口（请允许弹窗）');
+
+  // Create a fullscreen iframe for the print preview.
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = [
+    'position:fixed',
+    'inset:0',
+    'width:100%',
+    'height:100%',
+    'border:0',
+    'background:#fff',
+    'z-index:2147483647', // sit above any UI
+  ].join(';');
+  iframe.srcdoc = html;
+  document.body.appendChild(iframe);
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const onLoad = () => {
+        iframe.removeEventListener('load', onLoad);
+        iframe.removeEventListener('error', onError);
+        // Small extra delay so KaTeX/Shiki layout settles.
+        setTimeout(resolve, 100);
+      };
+      const onError = () => {
+        iframe.removeEventListener('load', onLoad);
+        iframe.removeEventListener('error', onError);
+        reject(new Error('打印预览 iframe 加载失败'));
+      };
+      iframe.addEventListener('load', onLoad);
+      iframe.addEventListener('error', onError);
+      // Hard timeout: 10s.
+      setTimeout(() => {
+        iframe.removeEventListener('load', onLoad);
+        iframe.removeEventListener('error', onError);
+        resolve();
+      }, 10000);
+    });
+
+    await tauri.printToPdf(destPath);
+  } finally {
+    iframe.remove();
   }
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
-  // Wait a tick for the document to render before printing.
-  setTimeout(() => {
-    win.focus();
-    win.print();
-  }, 300);
 }
