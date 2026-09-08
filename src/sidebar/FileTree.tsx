@@ -75,7 +75,13 @@ function TreeNode({ path, name, depth, onOpen, refreshKey }: TreeNodeProps) {
     let cancelled = false;
     tauri.readDir(path)
       .then((items) => { if (!cancelled) { setEntries(items); setError(null); } })
-      .catch((e) => { if (!cancelled) setError(String(e)); });
+      .catch((e) => {
+        if (cancelled) return;
+        const msg = (e && typeof e === 'object' && 'message' in e)
+          ? String((e as { message: unknown }).message)
+          : (typeof e === 'string' ? e : String(e));
+        setError(msg);
+      });
     return () => { cancelled = true; };
   }, [path, expanded, refreshKey]);
 
