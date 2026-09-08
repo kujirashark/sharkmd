@@ -68,6 +68,99 @@ body { margin: 0; height: 100vh; overflow: hidden; }
   padding: 8px 0;
 }
 .sidebar .sidebar-header { padding: 4px 12px; font-size: 12px; color: var(--muted); user-select: none; }
+
+/* Sidebar tab switcher (files / outline) */
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--code-bg);
+  flex: 0 0 auto;
+}
+.sidebar-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 6px 14px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+.sidebar-tab.active {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+  background: var(--bg);
+}
+.sidebar-tab:hover { color: var(--fg); }
+
+/* Menu bar (Typora-style) */
+.menubar {
+  display: flex;
+  background: var(--code-bg);
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 100;
+  -webkit-app-region: drag;
+  padding-left: 8px;
+}
+.menubar button { -webkit-app-region: no-drag; }
+.menu-item-wrap { position: relative; }
+.menu-trigger {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 12px;
+}
+.menu-trigger:hover, .menu-trigger.active { background: var(--border); }
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  min-width: 220px;
+  padding: 4px 0;
+  z-index: 101;
+}
+.menu-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 6px 16px;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+.menu-dropdown-item:hover:not(:disabled) { background: var(--code-bg); }
+.menu-dropdown-item:disabled { color: var(--muted); cursor: not-allowed; }
+.menu-shortcut { color: var(--muted); font-size: 11px; margin-left: 16px; }
+.menu-separator { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* Status bar (Typora-style bottom) */
+.statusbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 2px 12px;
+  background: var(--code-bg);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--fg);
+  flex: 0 0 auto;
+  min-height: 22px;
+}
+.statusbar.empty { color: var(--muted); text-align: center; }
+.status-left { text-align: left; }
+.status-center { text-align: center; color: var(--muted); }
+.status-right { text-align: right; color: var(--muted); }
 .file-tree { list-style: none; margin: 0; padding: 0; }
 .file-tree li {
   padding: 3px 12px;

@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { TabsBar } from '../tabs/TabsBar';
-import { FileTree } from '../sidebar/FileTree';
-import { extractHeadings } from '../sidebar/Outline';
+import { SidebarTabs, type SidebarTab } from './SidebarTabs';
+import { extractHeadings, type Heading } from '../sidebar/Outline';
 import { Editor } from '../editor/Editor';
 import { Toolbar } from '../editor/Toolbar';
-import { ThemeSwitcher } from '../theme/ThemeSwitcher';
+import { MenuBar } from './MenuBar';
+import { StatusBar } from './StatusBar';
 import { useTabsStore } from '../tabs/store';
 import { tauri } from '../tauri/client';
 import { parseMarkdown } from '../editor/bridge';
@@ -22,21 +23,18 @@ export function AppLayout() {
   const [rootPath, setRootPath] = useState<string>('');
   const [editor, setEditor] = useState<TiptapEditor | null>(null);
   const [fileTreeKey, setFileTreeKey] = useState(0);
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>('files');
+  const [showOutline, setShowOutline] = useState(true);
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
-  // Path → wall-clock timestamp of our last successful save. Used to
-  // suppress the watcher event fired by our own atomic write so the user
-  // isn't immediately prompted about their own save.
   const lastSaveAtRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     tauri.getSettings().then((s) => {
       useThemeStore.getState().setTheme(s.theme as ThemeName);
-      // Restore last-used working directory if it was saved
       if (s.lastRootPath) setRootPath(s.lastRootPath);
     }).catch(() => null);
   }, []);
 
-  // Persist rootPath whenever it changes
   useEffect(() => {
     if (!rootPath) return;
     tauri.getSettings().then((s) => {
@@ -45,66 +43,30 @@ export function AppLayout() {
     }).catch(() => null);
   }, [rootPath]);
 
-  // Global keyboard shortcuts
+  // Ctrl+O shortcut
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Ctrl+O / Cmd+O — open file via native dialog
       if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O') && !e.shiftKey) {
         e.preventDefault();
-        (async () => {
-          const selected = await openDialog({
-            multiple: false,
-            title: '打开 Markdown 文件',
-            filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
-            defaultPath: rootPath || undefined,
-          });
-          if (typeof selected === 'string' && selected) {
-            try {
-              const fc = await tauri.openFile(selected);
-              const json = parseMarkdown(fc.text);
-              addTab({
-                path: selected,
-                title: selected.split(/[\\/]/).pop() || selected,
-                content: json,
-                mtimeMs: fc.mtimeMs,
-              });
-              await tauri.watch(selected).catch(() => null);
-            } catch (err) {
-              window.alert(`无法打开文件: ${err}`);
-            }
-          }
-        })();
+        openSingleFile();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [rootPath, addTab]);
+  }, []);
 
-  // Recreate autosave manager whenever the active tab changes. The manager
-  // captures the active tab at the time a scheduled save fires, so a fresh
-  // instance is required per tab.
+  // Autosave manager
   useEffect(() => {
     autoSaveRef.current?.stop();
-    if (!activeId) {
-      autoSaveRef.current = null;
-      return;
-    }
+    if (!activeId) { autoSaveRef.current = null; return; }
     autoSaveRef.current = createAutoSave({
       getTab: () => useTabsStore.getState().tabs.find((t) => t.id === activeId),
-      onSave: (path) => {
-        lastSaveAtRef.current.set(path, Date.now());
-      },
+      onSave: (path) => { lastSaveAtRef.current.set(path, Date.now()); },
     });
-    return () => {
-      autoSaveRef.current?.stop();
-      autoSaveRef.current = null;
-    };
+    return () => { autoSaveRef.current?.stop(); autoSaveRef.current = null; };
   }, [activeId]);
 
-  // Listen for external file changes emitted by the Rust watcher.
-  // If the changed file matches the currently active tab and the new
-  // mtime is newer than ours, prompt the user to either reload from disk
-  // or keep the in-memory edits.
+  // External change listener
   useEffect(() => {
     const un = listen<{ path: string; mtimeMs: number }>(
       'fs:external-change',
@@ -113,96 +75,112 @@ export function AppLayout() {
         const cur = useTabsStore.getState().tabs.find(
           (t) => t.id === useTabsStore.getState().activeId,
         );
-        if (!cur) return;
-        if (path !== cur.path) return;
-        // Suppress the watcher event triggered by our own atomic save:
-        // if the event arrives within 1.5s of our recorded save and the
-        // reported mtime is no newer than what we just wrote, treat it
-        // as self-induced and skip the prompt.
+        if (!cur || path !== cur.path) return;
         const lastSavedAt = lastSaveAtRef.current.get(path) ?? 0;
         if (Date.now() - lastSavedAt < 1500 && mtimeMs <= cur.mtimeMs + 1) return;
         if (mtimeMs <= cur.mtimeMs) return;
-        const ok = window.confirm(
-          `文件已被外部修改：${path}\n是否重新加载磁盘版本？\n（取消将保留当前编辑）`,
-        );
+        const ok = window.confirm(`文件已被外部修改：${path}\n是否重新加载磁盘版本？\n（取消将保留当前编辑）`);
         if (!ok) return;
         try {
           const fc = await tauri.openFile(path);
           const json = parseMarkdown(fc.text);
           useTabsStore.getState().updateContent(cur.id, json, false);
           useTabsStore.getState().setMtime(cur.id, fc.mtimeMs);
-        } catch {
-          // MVP：失败静默，后续接入 toast 通知
-        }
+        } catch { /* silent */ }
       },
     );
-    return () => {
-      un.then((f) => f());
-    };
+    return () => { un.then((f) => f()); };
   }, []);
 
+  const openSingleFile = useCallback(async () => {
+    const selected = await openDialog({
+      multiple: false,
+      title: '打开 Markdown 文件',
+      filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
+      defaultPath: rootPath || undefined,
+    });
+    if (typeof selected === 'string' && selected) {
+      openFileByPath(selected);
+    }
+  }, [rootPath]);
+
+  const openFileByPath = useCallback(async (path: string) => {
+    try {
+      const fc = await tauri.openFile(path);
+      const json = parseMarkdown(fc.text);
+      addTab({
+        path,
+        title: path.split(/[\\/]/).pop() || path,
+        content: json,
+        mtimeMs: fc.mtimeMs,
+      });
+      await tauri.watch(path).catch(() => null);
+    } catch (e) {
+      window.alert(`无法打开文件: ${e}`);
+    }
+  }, [addTab]);
+
+  const chooseDirectory = useCallback(async () => {
+    const selected = await openDialog({
+      directory: true,
+      multiple: false,
+      title: '选择工作目录',
+      defaultPath: rootPath || undefined,
+    });
+    if (typeof selected === 'string' && selected) setRootPath(selected);
+  }, [rootPath]);
+
+  // Click outline → scroll editor to that heading
+  const handleOutlineClick = useCallback((h: Heading) => {
+    if (!editor) return;
+    // Find the heading node in the doc by text content
+    const { doc } = editor.state;
+    let foundPos: number | null = null;
+    doc.descendants((node, pos) => {
+      if (foundPos != null) return false;
+      if (node.type.name === 'heading' && node.attrs.level === h.level) {
+        const text = node.textContent;
+        if (text === h.text) { foundPos = pos; return false; }
+      }
+      return true;
+    });
+    if (foundPos != null) {
+      editor.commands.focus();
+      editor.commands.setTextSelection(foundPos + 1);
+      // Scroll into view
+      const dom = editor.view.domAtPos(foundPos + 1).node as HTMLElement;
+      dom?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [editor]);
+
   const active = tabs.find((t) => t.id === activeId);
-  const headings = active ? extractHeadings(active.content) : [];
+  const headings: Heading[] = active ? extractHeadings(active.content) : [];
 
   return (
     <div className="app-layout">
-      <header className="topbar">
-        <ThemeSwitcher />
-        <button
-          onClick={async () => {
-            const selected = await openDialog({
-              directory: true,
-              multiple: false,
-              title: '选择工作目录',
-              defaultPath: rootPath || undefined,
-            });
-            if (typeof selected === 'string' && selected) setRootPath(selected);
-          }}
-          title="选择要浏览的工作目录"
-        >
-          📂 选择目录
-        </button>
-        {active && (
-          <>
-            <span style={{ marginLeft: 12, color: 'var(--muted)', fontSize: 12 }} title="自动保存到磁盘和 draft 缓存">
-              {active.dirty ? '● 未保存' : '✓ 已自动保存'}
-            </span>
-            <span style={{ marginLeft: 8, color: 'var(--muted)', fontSize: 11, fontFamily: 'monospace' }}
-                  title={`content 类型=${active.content?.type} 顶层节点=${active.content?.content?.length ?? 0}`}>
-              [dbg: content≈{JSON.stringify(active.content).length} bytes]
-            </span>
-          </>
-        )}
-        <span className="spacer" />
-        <span style={{ color: 'var(--muted)', fontSize: 11 }}>
-          快捷键: Ctrl+B 加粗 · Ctrl+I 斜体 · Ctrl+K 链接 · # 空格=H1
-        </span>
-      </header>
+      <MenuBar
+        editor={editor}
+        onChooseDir={chooseDirectory}
+        onOpenFile={openFileByPath}
+        activeId={activeId}
+        showSidebar={true}
+        showOutline={showOutline}
+        onToggleSidebar={() => setSidebarTab((t) => t === 'files' ? 'outline' : 'files')}
+        onToggleOutline={() => setShowOutline((v) => !v)}
+      />
       <TabsBar />
       <div className="main">
         <aside className="sidebar">
           {rootPath ? (
-            <FileTree
-              key={fileTreeKey /* bump after create/refresh to re-fetch */}
+            <SidebarTabs
+              key={fileTreeKey}
+              active={sidebarTab}
+              onChange={setSidebarTab}
               rootPath={rootPath}
-              onOpen={async (path) => {
-                try {
-                  const fc = await tauri.openFile(path);
-                  const json = parseMarkdown(fc.text);
-                  addTab({
-                    path,
-                    title: path.split(/[\\/]/).pop() || path,
-                    content: json,
-                    mtimeMs: fc.mtimeMs,
-                  });
-                  await tauri.watch(path).catch(() => null);
-                } catch (e) {
-                  window.alert(`无法打开文件: ${e}`);
-                }
-              }}
+              headings={headings}
+              onOpen={openFileByPath}
               onCreate={async (path) => {
                 try {
-                  // Create empty file via save_file (atomic write creates if missing)
                   const res = await tauri.saveFile(path, '');
                   addTab({
                     path,
@@ -211,17 +189,22 @@ export function AppLayout() {
                     mtimeMs: res.mtimeMs,
                   });
                   await tauri.watch(path).catch(() => null);
-                  // Refresh tree by toggling rootPath briefly (cheap)
-                  setRootPath((p) => p + ' '); // no-op change to trigger refresh... but better:
-                  // Force FileTree to re-fetch by remounting via key
                   setFileTreeKey((k) => k + 1);
                 } catch (e) {
                   window.alert(`无法创建文件: ${e}`);
                 }
               }}
+              onOutlineClick={handleOutlineClick}
             />
           ) : (
-            <div className="empty">点击上方"📂 选择目录"开始</div>
+            <>
+              <div className="sidebar-tabs">
+                <button className="sidebar-tab active">文件</button>
+              </div>
+              <div className="empty" style={{ padding: '40px 20px', textAlign: 'center' }}>
+                点击菜单 文件 → 选择工作目录 开始
+              </div>
+            </>
           )}
         </aside>
         <main className="editor-pane">
@@ -229,7 +212,7 @@ export function AppLayout() {
           <div className="editor-scroll">
             {active ? (
               <Editor
-                key={active.id /* ensure fresh editor on tab switch */}
+                key={active.id}
                 value={active.content}
                 onChange={(c) => {
                   updateContent(active.id, c);
@@ -239,26 +222,37 @@ export function AppLayout() {
               />
             ) : (
               <div style={{ padding: 40, color: 'var(--muted)', textAlign: 'center' }}>
-                打开一个 .md 文件开始编辑
+                <p style={{ fontSize: 18, marginBottom: 8 }}>easymd</p>
+                <p>用 菜单 → 文件 → 打开文件… 或 Ctrl+O 打开一个 .md</p>
+                <p style={{ marginTop: 16, fontSize: 12 }}>或 菜单 → 文件 → 选择工作目录  浏览文件夹</p>
               </div>
             )}
           </div>
         </main>
-        <aside className="outline-pane">
-          <div className="outline-header">大纲</div>
-          {headings.length === 0 ? (
-            <div className="empty">无标题</div>
-          ) : (
-            <ul className="outline">
-              {headings.map((h, i) => (
-                <li key={i} data-level={h.level} title={`H${h.level}: ${h.text}`}>
-                  {h.text}
-                </li>
-              ))}
-            </ul>
-          )}
-        </aside>
+        {showOutline && (
+          <aside className="outline-pane">
+            <div className="outline-header">大纲 ({headings.length})</div>
+            {headings.length === 0 ? (
+              <div className="empty">无标题</div>
+            ) : (
+              <ul className="outline">
+                {headings.map((h, i) => (
+                  <li
+                    key={i}
+                    data-level={h.level}
+                    title={h.text}
+                    onClick={() => handleOutlineClick(h)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {h.text}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </aside>
+        )}
       </div>
+      <StatusBar editor={editor} />
     </div>
   );
 }
