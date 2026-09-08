@@ -15,7 +15,7 @@ pub fn draft_path(file_id: &str) -> PathBuf {
 }
 
 pub fn data_dir() -> PathBuf {
-    dirs::data_local_dir().unwrap_or_else(|| PathBuf::from(".")).join("easymd")
+    dirs::data_local_dir().unwrap_or_else(|| PathBuf::from(".")).join("sharkmd")
 }
 
 #[tauri::command(rename_all = "camelCase")]

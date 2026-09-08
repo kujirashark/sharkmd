@@ -1,4 +1,4 @@
-use easymd_lib::error::AppError;
+use sharkmd_lib::error::AppError;
 
 #[test]
 fn app_error_io_constructs_with_code_io_error() {
@@ -27,5 +27,5 @@ fn app_error_display_uses_message() {
 
 #[test]
 fn log_setup_init_does_not_panic() {
-    easymd_lib::log_setup::init();
+    sharkmd_lib::log_setup::init();
 }

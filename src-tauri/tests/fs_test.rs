@@ -1,4 +1,4 @@
-use easymd_lib::commands::fs as fs_cmd;
+use sharkmd_lib::commands::fs as fs_cmd;
 use std::fs;
 use tempfile::tempdir;
 

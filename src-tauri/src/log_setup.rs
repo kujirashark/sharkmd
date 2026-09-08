@@ -11,7 +11,7 @@ pub fn init() {
 }
 
 fn data_dir() -> PathBuf {
-    dirs::data_local_dir().unwrap_or_else(|| PathBuf::from(".")).join("easymd")
+    dirs::data_local_dir().unwrap_or_else(|| PathBuf::from(".")).join("sharkmd")
 }
 
 static LOGGER: SimpleLogger = SimpleLogger;

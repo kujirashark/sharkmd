@@ -25,5 +25,5 @@ pub fn run() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running easymd");
+        .expect("error while running sharkmd");
 }

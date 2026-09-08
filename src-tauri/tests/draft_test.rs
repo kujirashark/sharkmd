@@ -1,9 +1,9 @@
-use easymd_lib::commands::{draft, settings, settings::Settings};
+use sharkmd_lib::commands::{draft, settings, settings::Settings};
 
 #[tokio::test]
 async fn draft_round_trip() {
     let fid = format!("test_{}", std::process::id());
-    let path = std::env::temp_dir().join("easymd_test_draft.md");
+    let path = std::env::temp_dir().join("sharkmd_test_draft.md");
     let _ = std::fs::remove_file(draft::draft_path(&fid));
 
     draft::save_draft(fid.clone(), r#"{"v":1}"#.into(), Some(path.to_string_lossy().into_owned()))
