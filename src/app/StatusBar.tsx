@@ -12,27 +12,23 @@ export function StatusBar({ editor }: StatusBarProps) {
   const active = tabs.find((t) => t.id === activeId);
 
   // Live editor stats
-  const [stats, setStats] = useState({ chars: 0, words: 0, paragraphs: 0, cursorLine: 0, cursorCol: 0 });
+  const [stats, setStats] = useState({ chars: 0, words: 0, paragraphs: 0, ln: 1, col: 1, blockKind: '' });
   useEffect(() => {
     if (!editor) return;
     const update = () => {
       const text = editor.getText();
       const words = text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
       const paragraphs = editor.state.doc.childCount;
-      // Cursor position (1-based, line, col within block)
+      // Real line/col: count \n before cursor in the doc
       const { from } = editor.state.selection;
+      const textBefore = editor.state.doc.textBetween(0, from, '\n', '\n');
+      const lines = textBefore.split('\n');
+      const ln = lines.length;
+      const col = (lines[lines.length - 1] ?? '').length + 1;
+      // Identify current block kind
       const $from = editor.state.doc.resolve(from);
-      const cursorLine = $from.parent.attrs?.level || 0;
-      // Approximate col by counting text length within the parent
-      const parentText = $from.parent.textContent;
-      const cursorCol = parentText.length;
-      setStats({
-        chars: text.length,
-        words,
-        paragraphs,
-        cursorLine: cursorLine || 0,
-        cursorCol,
-      });
+      const blockKind = $from.parent.type.name;
+      setStats({ chars: text.length, words, paragraphs, ln, col, blockKind });
     };
     update();
     editor.on('update', update);
@@ -58,8 +54,7 @@ export function StatusBar({ editor }: StatusBarProps) {
         {editor ? `${stats.words} 词 · ${stats.chars} 字符` : '—'}
       </span>
       <span className="status-right">
-        {editor && stats.cursorLine > 0 ? `H${stats.cursorLine}` : ''}
-        {editor ? `  Ln ${Math.max(1, stats.cursorCol)}` : ''}
+        {editor ? `${stats.blockKind === 'heading' ? 'H' : ''}${stats.blockKind === 'paragraph' ? 'P' : ''}${stats.blockKind === 'codeBlock' ? 'C' : ''}${stats.blockKind === 'blockquote' ? 'Q' : ''}  Ln ${stats.ln}, Col ${stats.col}` : ''}
         <span style={{ margin: '0 8px', color: 'var(--border)' }}>|</span>
         <span style={{ color: 'var(--muted)' }}>UTF-8</span>
       </span>

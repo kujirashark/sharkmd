@@ -16,6 +16,7 @@ export interface MenuBarProps {
   showOutline: boolean;
   onToggleSidebar: () => void;
   onToggleOutline: () => void;
+  onOpenFind: () => void;
 }
 
 interface MenuItem {
@@ -33,7 +34,7 @@ interface MenuDef {
 
 export function MenuBar({
   editor, onChooseDir, onOpenFile, activeId,
-  showSidebar, showOutline, onToggleSidebar, onToggleOutline,
+  showSidebar, showOutline, onToggleSidebar, onToggleOutline, onOpenFind,
 }: MenuBarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const setTheme = useThemeStore((s) => s.setTheme);
@@ -93,19 +94,7 @@ export function MenuBar({
         { label: '撤销', shortcut: 'Ctrl+Z', disabled: !editor, run: () => editor?.chain().focus().undo().run() },
         { label: '重做', shortcut: 'Ctrl+Y', disabled: !editor, run: () => editor?.chain().focus().redo().run() },
         { separator: true, label: '' },
-        { label: '查找…', shortcut: 'Ctrl+F', run: () => {
-          const q = window.prompt('查找（不支持替换）');
-          if (!q || !editor) return;
-          // Simple find: move cursor to first match
-          const text = editor.getText();
-          const idx = text.indexOf(q);
-          if (idx >= 0) {
-            // TipTap's text-relative positions are tricky; this is a best-effort
-            window.alert(`找到 "${q}"，位置 ${idx}（简化实现）`);
-          } else {
-            window.alert(`未找到 "${q}"`);
-          }
-        } },
+        { label: '查找…', shortcut: 'Ctrl+F', run: () => onOpenFind() },
       ],
     },
     {
@@ -153,6 +142,8 @@ export function MenuBar({
       items: [
         { label: showSidebar ? '✓ 侧栏' : '侧栏', run: onToggleSidebar },
         { label: showOutline ? '✓ 大纲' : '大纲', run: onToggleOutline },
+        { separator: true, label: '' },
+        { label: '查找', shortcut: 'Ctrl+F', run: () => onOpenFind() },
       ],
     },
     {

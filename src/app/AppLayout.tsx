@@ -6,6 +6,7 @@ import { SidebarTabs, type SidebarTab } from './SidebarTabs';
 import { extractHeadings, type Heading } from '../sidebar/Outline';
 import { Editor } from '../editor/Editor';
 import { Toolbar } from '../editor/Toolbar';
+import { FindBar } from '../editor/FindBar';
 import { MenuBar } from './MenuBar';
 import { StatusBar } from './StatusBar';
 import { useTabsStore } from '../tabs/store';
@@ -24,7 +25,9 @@ export function AppLayout() {
   const [editor, setEditor] = useState<TiptapEditor | null>(null);
   const [fileTreeKey, setFileTreeKey] = useState(0);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('files');
+  const [showSidebar, setShowSidebar] = useState(true);
   const [showOutline, setShowOutline] = useState(true);
+  const [findOpen, setFindOpen] = useState(false);
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   const lastSaveAtRef = useRef<Map<string, number>>(new Map());
 
@@ -163,52 +166,56 @@ export function AppLayout() {
         onChooseDir={chooseDirectory}
         onOpenFile={openFileByPath}
         activeId={activeId}
-        showSidebar={true}
+        showSidebar={showSidebar}
         showOutline={showOutline}
-        onToggleSidebar={() => setSidebarTab((t) => t === 'files' ? 'outline' : 'files')}
+        onToggleSidebar={() => setShowSidebar((v) => !v)}
         onToggleOutline={() => setShowOutline((v) => !v)}
+        onOpenFind={() => setFindOpen(true)}
       />
       <TabsBar />
       <div className="main">
-        <aside className="sidebar">
-          {rootPath ? (
-            <SidebarTabs
-              key={fileTreeKey}
-              active={sidebarTab}
-              onChange={setSidebarTab}
-              rootPath={rootPath}
-              headings={headings}
-              onOpen={openFileByPath}
-              onCreate={async (path) => {
-                try {
-                  const res = await tauri.saveFile(path, '');
-                  addTab({
-                    path,
-                    title: path.split(/[\\/]/).pop() || path,
-                    content: { type: 'doc', content: [{ type: 'paragraph' }] },
-                    mtimeMs: res.mtimeMs,
-                  });
-                  await tauri.watch(path).catch(() => null);
-                  setFileTreeKey((k) => k + 1);
-                } catch (e) {
-                  window.alert(`无法创建文件: ${e}`);
-                }
-              }}
-              onOutlineClick={handleOutlineClick}
-            />
-          ) : (
-            <>
-              <div className="sidebar-tabs">
-                <button className="sidebar-tab active">文件</button>
-              </div>
-              <div className="empty" style={{ padding: '40px 20px', textAlign: 'center' }}>
-                点击菜单 文件 → 选择工作目录 开始
-              </div>
-            </>
-          )}
-        </aside>
+        {showSidebar && (
+          <aside className="sidebar">
+            {rootPath ? (
+              <SidebarTabs
+                key={fileTreeKey}
+                active={sidebarTab}
+                onChange={setSidebarTab}
+                rootPath={rootPath}
+                headings={headings}
+                onOpen={openFileByPath}
+                onCreate={async (path) => {
+                  try {
+                    const res = await tauri.saveFile(path, '');
+                    addTab({
+                      path,
+                      title: path.split(/[\\/]/).pop() || path,
+                      content: { type: 'doc', content: [{ type: 'paragraph' }] },
+                      mtimeMs: res.mtimeMs,
+                    });
+                    await tauri.watch(path).catch(() => null);
+                    setFileTreeKey((k) => k + 1);
+                  } catch (e) {
+                    window.alert(`无法创建文件: ${e}`);
+                  }
+                }}
+                onOutlineClick={handleOutlineClick}
+              />
+            ) : (
+              <>
+                <div className="sidebar-tabs">
+                  <button className="sidebar-tab active">文件</button>
+                </div>
+                <div className="empty" style={{ padding: '40px 20px', textAlign: 'center' }}>
+                  点击菜单 文件 → 选择工作目录 开始
+                </div>
+              </>
+            )}
+          </aside>
+        )}
         <main className="editor-pane">
           <Toolbar editor={editor} />
+          <FindBar editor={editor} open={findOpen} onClose={() => setFindOpen(false)} />
           <div className="editor-scroll">
             {active ? (
               <Editor

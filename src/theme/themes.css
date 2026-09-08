@@ -161,6 +161,37 @@ body { margin: 0; height: 100vh; overflow: hidden; }
 .status-left { text-align: left; }
 .status-center { text-align: center; color: var(--muted); }
 .status-right { text-align: right; color: var(--muted); }
+
+/* Find bar */
+.findbar {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 4px 12px;
+  background: var(--code-bg);
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.findbar-row { display: flex; align-items: center; gap: 4px; }
+.findbar-input {
+  flex: 1; min-width: 0;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 12px;
+  outline: none;
+}
+.findbar-input:focus { border-color: var(--accent); }
+.findbar-count { color: var(--muted); font-size: 11px; min-width: 60px; }
+.findbar button {
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 2px 8px; border-radius: 3px;
+  color: var(--fg); cursor: pointer; font-size: 12px;
+  min-width: 24px;
+}
+.findbar button:disabled { color: var(--muted); cursor: not-allowed; }
+.findbar button:hover:not(:disabled) { background: var(--border); }
+.findbar-close { font-size: 14px; }
 .file-tree { list-style: none; margin: 0; padding: 0; }
 .file-tree li {
   padding: 3px 12px;
