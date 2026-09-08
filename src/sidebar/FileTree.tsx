@@ -12,14 +12,29 @@ export function FileTree({ rootPath, onOpen }: FileTreeProps) {
   useEffect(() => {
     tauri.readDir(rootPath).then(setEntries).catch((e) => setError(String(e)));
   }, [rootPath]);
+
+  // Filter: show directories + .md files only, hide dotfiles
+  const visible = entries.filter((e) => {
+    if (e.name.startsWith('.')) return false;
+    return e.isDir || e.isMd;
+  });
+
   if (error) return <div className="error">{error}</div>;
   return (
-    <ul className="file-tree" role="tree">
-      {entries.map((e) => (
-        <li key={e.path} className={e.isDir ? 'dir' : 'file'}>
-          {e.isDir ? '📁' : e.isMd ? '📄' : '·'} <span onClick={() => e.isMd && onOpen(e.path)}>{e.name}</span>
-        </li>
-      ))}
-    </ul>
+    <>
+      <div className="sidebar-header">文件</div>
+      {visible.length === 0 ? (
+        <div className="empty">无 .md 文件</div>
+      ) : (
+        <ul className="file-tree" role="tree">
+          {visible.map((e) => (
+            <li key={e.path} className={e.isDir ? 'dir' : 'file'}>
+              <span className="icon">{e.isDir ? '📁' : '📄'}</span>
+              <span onClick={() => e.isMd && onOpen(e.path)}>{e.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }

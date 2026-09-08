@@ -11,7 +11,7 @@
   },
   "app": {
     "windows": [
-      { "title": "easymd", "width": 1200, "height": 800, "minWidth": 800, "minHeight": 600 }
+      { "title": "easymd", "width": 1280, "height": 820, "minWidth": 1200, "minHeight": 700 }
     ],
     "security": { "csp": null }
   },

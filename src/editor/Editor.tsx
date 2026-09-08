@@ -1,6 +1,7 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import type { JSONContent } from '@tiptap/core';
+import Link from '@tiptap/extension-link';
+import type { Editor as TiptapEditor, JSONContent } from '@tiptap/core';
 import { useEffect } from 'react';
 import { MarkdownInputRules } from './extensions/markdown-input-rules';
 import { MarkdownPaste } from './extensions/markdown-paste';
@@ -9,11 +10,18 @@ import { MarkdownKeymap } from './extensions/markdown-keymap';
 export interface EditorProps {
   value: JSONContent;
   onChange: (json: JSONContent) => void;
+  onEditorReady?: (editor: TiptapEditor) => void;
 }
 
-export function Editor({ value, onChange }: EditorProps) {
+export function Editor({ value, onChange, onEditorReady }: EditorProps) {
   const editor = useEditor({
-    extensions: [StarterKit, MarkdownInputRules, MarkdownPaste, MarkdownKeymap],
+    extensions: [
+      StarterKit,
+      Link.configure({ openOnClick: false, autolink: false }),
+      MarkdownInputRules,
+      MarkdownPaste,
+      MarkdownKeymap,
+    ],
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
   });
@@ -28,6 +36,12 @@ export function Editor({ value, onChange }: EditorProps) {
     editor.commands.setContent(value, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, editor]);
+
+  // Expose the editor instance to the parent (used by the toolbar).
+  useEffect(() => {
+    if (editor && onEditorReady) onEditorReady(editor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
 
   return <EditorContent editor={editor!} />;
 }
