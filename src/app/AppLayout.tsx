@@ -26,7 +26,6 @@ export function AppLayout() {
   const [fileTreeKey, setFileTreeKey] = useState(0);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('files');
   const [showSidebar, setShowSidebar] = useState(true);
-  const [showOutline, setShowOutline] = useState(true);
   const [findOpen, setFindOpen] = useState(false);
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   const lastSaveAtRef = useRef<Map<string, number>>(new Map());
@@ -167,9 +166,9 @@ export function AppLayout() {
         onOpenFile={openFileByPath}
         activeId={activeId}
         showSidebar={showSidebar}
-        showOutline={showOutline}
+        showOutline={true /* legacy: outline lives in sidebar tab now */}
         onToggleSidebar={() => setShowSidebar((v) => !v)}
-        onToggleOutline={() => setShowOutline((v) => !v)}
+        onToggleOutline={() => setShowSidebar((v) => !v)}
         onOpenFind={() => setFindOpen(true)}
       />
       <TabsBar />
@@ -236,28 +235,6 @@ export function AppLayout() {
             )}
           </div>
         </main>
-        {showOutline && (
-          <aside className="outline-pane">
-            <div className="outline-header">大纲 ({headings.length})</div>
-            {headings.length === 0 ? (
-              <div className="empty">无标题</div>
-            ) : (
-              <ul className="outline">
-                {headings.map((h, i) => (
-                  <li
-                    key={i}
-                    data-level={h.level}
-                    title={h.text}
-                    onClick={() => handleOutlineClick(h)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {h.text}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </aside>
-        )}
       </div>
       <StatusBar editor={editor} />
     </div>
