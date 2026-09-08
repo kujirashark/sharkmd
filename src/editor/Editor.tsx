@@ -55,7 +55,7 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath, initia
       MathDisplay,
       CodeBlockWithMermaid,
       MarkdownInputRules,
-      MarkdownPaste,
+      MarkdownPaste.configure({ currentFilePath: currentFilePath ?? '' }),
       MarkdownKeymap,
       MultiCursor,
       ColumnSelection,
@@ -82,16 +82,6 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath, initia
     if (!editor) return;
     if (value === lastEmittedRef.current) return; // our own update, skip
     if (value === lastAppliedRef.current) return; // already applied
-    // Deep-equality guard against React 18 strict-mode double-render where
-    // a new wrapper object carries the same doc — without this, the second
-    // pass would call setContent(value, false) and clobber any in-progress
-    // edit the user made after the first onUpdate fired (e.g. press Enter
-    // right after inserting a table).
-    if (editorEqual(editor.getJSON(), value)) {
-      lastEmittedRef.current = value;
-      lastAppliedRef.current = value;
-      return;
-    }
     lastAppliedRef.current = value;
     editor.commands.setContent(value, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,48 +132,6 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath, initia
     return <div style={{ padding: 24, color: 'var(--muted)' }}>{t('editor.loading')}</div>;
   }
   return <EditorContent editor={editor} />;
-}
-
-/**
- * Deep-equal for TipTap JSONContent trees. Compares node types, attrs (shallow),
- * and content recursively. Used to short-circuit the controlled-mode setContent
- * loop when the parent passes back a structurally-identical doc (e.g. after
- * React 18 strict-mode double-render of the same onChange payload).
- */
-function editorEqual(a: JSONContent | null | undefined, b: JSONContent | null | undefined): boolean {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  if (a.type !== b.type) return false;
-  const aAttrs = (a.attrs ?? {}) as Record<string, unknown>;
-  const bAttrs = (b.attrs ?? {}) as Record<string, unknown>;
-  const aAttrKeys = Object.keys(aAttrs);
-  const bAttrKeys = Object.keys(bAttrs);
-  if (aAttrKeys.length !== bAttrKeys.length) return false;
-  for (const k of aAttrKeys) {
-    if (aAttrs[k] !== bAttrs[k]) return false;
-  }
-  const aMarks = a.marks ?? [];
-  const bMarks = b.marks ?? [];
-  if (aMarks.length !== bMarks.length) return false;
-  for (let i = 0; i < aMarks.length; i++) {
-    if (aMarks[i].type !== bMarks[i].type) return false;
-    const am = (aMarks[i].attrs ?? {}) as Record<string, unknown>;
-    const bm = (bMarks[i].attrs ?? {}) as Record<string, unknown>;
-    const amk = Object.keys(am);
-    const bmk = Object.keys(bm);
-    if (amk.length !== bmk.length) return false;
-    for (const k of amk) if (am[k] !== bm[k]) return false;
-  }
-  const aText = a.text ?? '';
-  const bText = b.text ?? '';
-  if (aText !== bText) return false;
-  const aContent = a.content ?? [];
-  const bContent = b.content ?? [];
-  if (aContent.length !== bContent.length) return false;
-  for (let i = 0; i < aContent.length; i++) {
-    if (!editorEqual(aContent[i], bContent[i])) return false;
-  }
-  return true;
 }
 
 /**

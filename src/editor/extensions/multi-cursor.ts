@@ -273,7 +273,13 @@ export const MultiCursor = Extension.create({
 
   addKeyboardShortcuts() {
     return {
-      'Mod-d': () => {
+      // WebView2 / WKWebView swallow `Mod-d` at the platform layer
+      // (system "bookmark this page" accelerator) so ProseMirror never
+      // sees the keydown. Use Mod-Shift-d instead — same VS Code feel,
+      // doesn't collide with browser shortcuts. Also keep an Escape fallback
+      // so users who instinctively type lowercase d don't get a silent
+      // no-op; we surface it as a no-op in the keymap (return false below).
+      'Mod-Shift-d': () => {
         const commands = this.editor.commands as unknown as {
           selectNextOccurrence: () => boolean;
           clearCursors: () => boolean;

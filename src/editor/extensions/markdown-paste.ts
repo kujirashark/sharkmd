@@ -15,11 +15,25 @@ export function detectMarkdown(text: string): boolean {
   return /(^|\n)(#{1,6} |[-*+] |\d+\. |> |```)|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)/.test(text);
 }
 
-export const MarkdownPaste = Extension.create({
+export interface MarkdownPasteOptions {
+  /**
+   * Absolute path of the .md file being edited. Used to decide where to
+   * save pasted images (`<dir>/assets/`). Seeded at extension configure time
+   * so the FIRST paste on a freshly-mounted editor can find the path —
+   * previously this relied on a useEffect push that arrived too late.
+   */
+  currentFilePath?: string;
+}
+
+export const MarkdownPaste = Extension.create<MarkdownPasteOptions>({
   name: 'markdownPaste',
 
+  addOptions() {
+    return { currentFilePath: '' };
+  },
+
   addStorage() {
-    return { currentFilePath: '' as string };
+    return { currentFilePath: this.options.currentFilePath ?? '' };
   },
 
   addProseMirrorPlugins() {
