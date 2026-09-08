@@ -100,7 +100,7 @@ body { margin: 0; height: 100vh; overflow: hidden; }
 .file-tree li.dir span:nth-child(2) { color: var(--accent); cursor: pointer; }
 
 /* Center: editor + toolbar */
-.editor-pane { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.editor-pane { flex: 1 1 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .toolbar {
   display: flex; gap: 2px;
   padding: 4px 12px;
@@ -116,7 +116,13 @@ body { margin: 0; height: 100vh; overflow: hidden; }
 }
 .toolbar button:hover { background: var(--border); }
 .toolbar .sep { width: 1px; background: var(--border); margin: 2px 4px; }
-.ProseMirror { padding: 24px 48px; line-height: 1.7; max-width: 820px; margin: 0 auto; outline: none; flex: 1 1 auto; overflow-y: auto; }
+.editor-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.ProseMirror { padding: 24px 48px; line-height: 1.7; max-width: 820px; margin: 0 auto; outline: none; min-height: 100%; }
 .ProseMirror h1 { font-size: 2em; margin-top: 0.6em; }
 .ProseMirror h2 { font-size: 1.5em; margin-top: 0.5em; }
 .ProseMirror h3 { font-size: 1.25em; }

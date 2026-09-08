@@ -205,21 +205,23 @@ export function AppLayout() {
         </aside>
         <main className="editor-pane">
           <Toolbar editor={editor} />
-          {active ? (
-            <Editor
-              key={active.id /* ensure fresh editor on tab switch */}
-              value={active.content}
-              onChange={(c) => {
-                updateContent(active.id, c);
-                autoSaveRef.current?.schedule(active.id);
-              }}
-              onEditorReady={setEditor}
-            />
-          ) : (
-            <div style={{ padding: 40, color: 'var(--muted)', textAlign: 'center' }}>
-              打开一个 .md 文件开始编辑
-            </div>
-          )}
+          <div className="editor-scroll">
+            {active ? (
+              <Editor
+                key={active.id /* ensure fresh editor on tab switch */}
+                value={active.content}
+                onChange={(c) => {
+                  updateContent(active.id, c);
+                  autoSaveRef.current?.schedule(active.id);
+                }}
+                onEditorReady={setEditor}
+              />
+            ) : (
+              <div style={{ padding: 40, color: 'var(--muted)', textAlign: 'center' }}>
+                打开一个 .md 文件开始编辑
+              </div>
+            )}
+          </div>
         </main>
         <aside className="outline-pane">
           <div className="outline-header">大纲</div>
