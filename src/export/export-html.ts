@@ -250,6 +250,14 @@ export function exportToWord(doc: JSONContent, opts: ExportOptions): string {
       const src = (node.attrs as any)?.src ?? '';
       return `<img src="${escapeHtml(src)}"/>`;
     }
+    if (node.type === 'mathInline') {
+      const latex = (node.attrs as any)?.latex ?? '';
+      try {
+        return katex.renderToString(latex, { throwOnError: false, output: 'html' });
+      } catch {
+        return `<code class="math-error">${escapeHtml(latex)}</code>`;
+      }
+    }
     const inner = (node.content ?? []).map(fallbackRender).join('');
     if (node.type === 'paragraph') return `<p>${inner || '<br/>'}</p>`;
     if (node.type === 'heading') {
@@ -264,6 +272,22 @@ export function exportToWord(doc: JSONContent, opts: ExportOptions): string {
     if (node.type === 'bulletList') return `<ul>${inner}</ul>`;
     if (node.type === 'orderedList') return `<ol>${inner}</ol>`;
     if (node.type === 'listItem') return `<li>${inner}</li>`;
+    if (node.type === 'taskItem') {
+      const checked = (node.attrs as any)?.checked ? 'checked' : '';
+      return `<li><input type="checkbox" disabled ${checked}/> ${inner}</li>`;
+    }
+    if (node.type === 'mathDisplay') {
+      const latex = (node.attrs as any)?.latex ?? '';
+      try {
+        return `<div class="math-display">${katex.renderToString(latex, { displayMode: true, throwOnError: false, output: 'html' })}</div>`;
+      } catch {
+        return `<pre class="math-error">${escapeHtml(latex)}</pre>`;
+      }
+    }
+    if (node.type === 'table') return `<table>${inner}</table>`;
+    if (node.type === 'tableRow') return `<tr>${inner}</tr>`;
+    if (node.type === 'tableCell') return `<td>${inner}</td>`;
+    if (node.type === 'tableHeader') return `<th>${inner}</th>`;
     if (node.type === 'horizontalRule') return '<hr/>';
     return inner;
   };

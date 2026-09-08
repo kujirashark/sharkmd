@@ -119,7 +119,7 @@ export function MenuBar({
             window.alert(`PDF 导出失败: ${e}`);
           }
         } },
-        { label: '导出为 Word…', disabled: !editor, run: async () => {
+        { label: '导出为 Word (HTML)…', disabled: !editor, run: async () => {
           if (!editor) return;
           const current = tabs.find((t) => t.id === activeId);
           const baseName = current ? current.title.replace(/\.md$/i, '') : 'untitled';
@@ -127,13 +127,13 @@ export function MenuBar({
           try {
             const html = exportToWord(editor.getJSON(), { title: baseName, theme });
             const dest = await saveDialog({
-              title: '导出为 Word',
-              defaultPath: baseName + '.doc',
-              filters: [{ name: 'Word (HTML)', extensions: ['doc'] }],
+              title: '导出为 Word (HTML) — 右键文件 → 打开方式 → Word',
+              defaultPath: baseName + '.html',
+              filters: [{ name: 'Word HTML', extensions: ['html'] }],
             });
             if (typeof dest === 'string' && dest) {
               await tauri.saveFile(dest, html);
-              window.alert(`已导出到 ${dest}`);
+              window.alert(`已导出到 ${dest}\n\n在 Word 中打开：右键文件 → 打开方式 → Word`);
             }
           } catch (e) {
             window.alert(`Word 导出失败: ${e}`);
