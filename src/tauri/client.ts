@@ -10,6 +10,8 @@ export interface AppError { code: string; message: string; detail: string | null
 export const tauri = {
   openFile: (path: string) => invoke<FileContent>('open_file', { path }),
   saveFile: (path: string, content: string) => invoke<SaveResult>('save_file', { path, content }),
+  saveBinaryFile: (path: string, content: Uint8Array) =>
+    invoke<SaveResult>('save_binary_file', { path, content: Array.from(content) }),
   saveAs: (srcPath: string, destPath: string, content: string) =>
     invoke<SaveResult>('save_as', { srcPath, destPath, content }),
   readDir: (path: string) => invoke<DirEntry[]>('read_dir', { path }),

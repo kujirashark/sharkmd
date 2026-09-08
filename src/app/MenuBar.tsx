@@ -6,7 +6,8 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { serializeMarkdown } from '../editor/bridge';
 import { useThemeStore } from '../theme/store';
 import { useTabsStore } from '../tabs/store';
-import { exportToHTML, exportToPDF, exportToWord } from '../export/export-html';
+import { exportToHTML, exportToPDF } from '../export/export-html';
+import { exportToDocx, blobToUint8Array } from '../export/export-docx';
 
 export interface MenuBarProps {
   editor: Editor | null;
@@ -119,21 +120,22 @@ export function MenuBar({
             window.alert(`PDF 导出失败: ${e}`);
           }
         } },
-        { label: '导出为 Word (HTML)…', disabled: !editor, run: async () => {
+        { label: '导出为 Word (.docx)…', disabled: !editor, run: async () => {
           if (!editor) return;
           const current = tabs.find((t) => t.id === activeId);
           const baseName = current ? current.title.replace(/\.md$/i, '') : 'untitled';
           const theme = useThemeStore.getState().theme === 'dark' ? 'github-dark' : 'github-light';
           try {
-            const html = exportToWord(editor.getJSON(), { title: baseName, theme });
+            const blob = await exportToDocx(editor.getJSON(), { title: baseName, theme });
             const dest = await saveDialog({
-              title: '导出为 Word (HTML) — 右键文件 → 打开方式 → Word',
-              defaultPath: baseName + '.html',
-              filters: [{ name: 'Word HTML', extensions: ['html'] }],
+              title: '导出为 Word (.docx)',
+              defaultPath: baseName + '.docx',
+              filters: [{ name: 'Word Document', extensions: ['docx'] }],
             });
             if (typeof dest === 'string' && dest) {
-              await tauri.saveFile(dest, html);
-              window.alert(`已导出到 ${dest}\n\n在 Word 中打开：右键文件 → 打开方式 → Word`);
+              const bytes = await blobToUint8Array(blob);
+              await tauri.saveBinaryFile(dest, bytes);
+              window.alert(`已导出到 ${dest}\n\n用 Word 2016+ / WPS Office / LibreOffice 打开`);
             }
           } catch (e) {
             window.alert(`Word 导出失败: ${e}`);

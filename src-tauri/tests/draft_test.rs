@@ -31,6 +31,7 @@ async fn settings_default_and_persist() {
         theme: "dark".into(),
         font_size: 18,
         custom_css_path: None,
+        last_root_path: None,
     };
     settings::set_settings(s2.clone()).await.unwrap();
     let s3 = settings::get_settings().await.unwrap();
