@@ -1,6 +1,11 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import type { Editor as TiptapEditor, JSONContent } from '@tiptap/core';
 import { useEffect, useRef } from 'react';
 import { MarkdownInputRules } from './extensions/markdown-input-rules';
@@ -17,14 +22,15 @@ const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] }
 
 export function Editor({ value, onChange, onEditorReady }: EditorProps) {
   // Always initialize with an empty doc; sync real content via useEffect.
-  // Initializing with `content: value` from useEditor is unreliable under
-  // StrictMode (double-mount) and React 18 batching — the editor can be
-  // created with the previous render's value, leaving the new content
-  // stranded. We do NOT use useEditor for content; we set it ourselves.
   const editor = useEditor({
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false, autolink: false }),
+      Image.configure({ inline: false, allowBase64: true }),
+      Table.configure({ resizable: false }),
+      TableRow,
+      TableHeader,
+      TableCell,
       MarkdownInputRules,
       MarkdownPaste,
       MarkdownKeymap,

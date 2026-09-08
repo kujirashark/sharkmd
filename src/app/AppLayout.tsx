@@ -30,8 +30,54 @@ export function AppLayout() {
   useEffect(() => {
     tauri.getSettings().then((s) => {
       useThemeStore.getState().setTheme(s.theme as ThemeName);
+      // Restore last-used working directory if it was saved
+      if (s.lastRootPath) setRootPath(s.lastRootPath);
     }).catch(() => null);
   }, []);
+
+  // Persist rootPath whenever it changes
+  useEffect(() => {
+    if (!rootPath) return;
+    tauri.getSettings().then((s) => {
+      if (s.lastRootPath === rootPath) return;
+      tauri.setSettings({ ...s, lastRootPath: rootPath }).catch(() => null);
+    }).catch(() => null);
+  }, [rootPath]);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Ctrl+O / Cmd+O — open file via native dialog
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O') && !e.shiftKey) {
+        e.preventDefault();
+        (async () => {
+          const selected = await openDialog({
+            multiple: false,
+            title: '打开 Markdown 文件',
+            filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
+            defaultPath: rootPath || undefined,
+          });
+          if (typeof selected === 'string' && selected) {
+            try {
+              const fc = await tauri.openFile(selected);
+              const json = parseMarkdown(fc.text);
+              addTab({
+                path: selected,
+                title: selected.split(/[\\/]/).pop() || selected,
+                content: json,
+                mtimeMs: fc.mtimeMs,
+              });
+              await tauri.watch(selected).catch(() => null);
+            } catch (err) {
+              window.alert(`无法打开文件: ${err}`);
+            }
+          }
+        })();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [rootPath, addTab]);
 
   // Recreate autosave manager whenever the active tab changes. The manager
   // captures the active tab at the time a scheduled save fires, so a fresh
