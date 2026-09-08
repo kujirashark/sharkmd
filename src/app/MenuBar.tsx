@@ -195,9 +195,11 @@ export function MenuBar({
           if (!url) return;
           editor.chain().focus().setImage({ src: url, alt: '' }).run();
         } },
-        { label: '插入表格 3×3', disabled: !editor, run: () =>
-          editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-        },
+        { label: '插入表格 3×3', disabled: !editor, run: () => {
+          if (!editor) return;
+          editor.commands.focus();
+          editor.chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+        } },
       ],
     },
     {

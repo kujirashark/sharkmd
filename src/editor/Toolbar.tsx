@@ -83,7 +83,13 @@ const buttons: (ButtonDef | 'sep')[] = [
   'sep',
   {
     key: 'table', label: '⊞ 表格', title: '插入 3×3 表格（含表头）',
-    run: (e) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+    // Explicit focus() before insertTable — when the toolbar button receives
+    // focus, the editor loses its selection; without this first call the
+    // table lands at doc start and can clobber content.
+    run: (e) => {
+      e.commands.focus();
+      e.chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+    },
   },
   {
     key: 'codeblock', label: '``` 代码', title: '代码块（行首 ```）',

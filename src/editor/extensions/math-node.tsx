@@ -44,9 +44,13 @@ function MathNodeView({ node, updateAttributes, extension }: NodeViewProps) {
   const className = isDisplay
     ? (editing ? 'math-display math-editing' : 'math-display')
     : (editing ? 'math-inline math-editing' : 'math-inline');
+  // contentEditable={false} on the root: the math node is atom (non-editable).
+  // Without it React's default makes the wrapper div a separate non-editable
+  // subtree, which breaks the editor's contentEditable inheritance and
+  // swallows Enter / arrow keys globally.
   if (editing) {
     return (
-      <div className={className} data-latex={latex}>
+      <div className={className} contentEditable={false} data-latex={latex}>
         <textarea
           autoFocus
           value={draft}
@@ -73,6 +77,7 @@ function MathNodeView({ node, updateAttributes, extension }: NodeViewProps) {
   return (
     <div
       className={className}
+      contentEditable={false}
       onDoubleClick={() => {
         setDraft(latex);
         setEditing(true);

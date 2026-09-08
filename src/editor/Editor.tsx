@@ -20,11 +20,13 @@ export interface EditorProps {
   value: JSONContent;
   onChange: (json: JSONContent) => void;
   onEditorReady?: (editor: TiptapEditor) => void;
+  /** Absolute path of the currently open .md file (for image paste → assets/). */
+  currentFilePath?: string;
 }
 
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] };
 
-export function Editor({ value, onChange, onEditorReady }: EditorProps) {
+export function Editor({ value, onChange, onEditorReady, currentFilePath }: EditorProps) {
   // Always initialize with an empty doc; sync real content via useEffect.
   const editor = useEditor({
     extensions: [
@@ -66,6 +68,16 @@ export function Editor({ value, onChange, onEditorReady }: EditorProps) {
     if (!editor) return;
     if (value === lastEmittedRef.current) return; // our own update, skip
     if (value === lastAppliedRef.current) return; // already applied
+    // Deep-equality guard against React 18 strict-mode double-render where
+    // a new wrapper object carries the same doc — without this, the second
+    // pass would call setContent(value, false) and clobber any in-progress
+    // edit the user made after the first onUpdate fired (e.g. press Enter
+    // right after inserting a table).
+    if (editorEqual(editor.getJSON(), value)) {
+      lastEmittedRef.current = value;
+      lastAppliedRef.current = value;
+      return;
+    }
     lastAppliedRef.current = value;
     editor.commands.setContent(value, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,8 +89,61 @@ export function Editor({ value, onChange, onEditorReady }: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
+  // Push the current file path into the MarkdownPaste plugin's storage so
+  // image-paste can decide where to save. Storage updates don't trigger a
+  // editor rebuild.
+  useEffect(() => {
+    if (!editor) return;
+    if ((editor.storage.markdownPaste as { currentFilePath?: string }).currentFilePath !== (currentFilePath ?? '')) {
+      (editor.storage.markdownPaste as { currentFilePath: string }).currentFilePath = currentFilePath ?? '';
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentFilePath, editor]);
+
   if (!editor) {
     return <div style={{ padding: 24, color: 'var(--muted)' }}>编辑器加载中…</div>;
   }
   return <EditorContent editor={editor} />;
+}
+
+/**
+ * Deep-equal for TipTap JSONContent trees. Compares node types, attrs (shallow),
+ * and content recursively. Used to short-circuit the controlled-mode setContent
+ * loop when the parent passes back a structurally-identical doc (e.g. after
+ * React 18 strict-mode double-render of the same onChange payload).
+ */
+function editorEqual(a: JSONContent | null | undefined, b: JSONContent | null | undefined): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.type !== b.type) return false;
+  const aAttrs = (a.attrs ?? {}) as Record<string, unknown>;
+  const bAttrs = (b.attrs ?? {}) as Record<string, unknown>;
+  const aAttrKeys = Object.keys(aAttrs);
+  const bAttrKeys = Object.keys(bAttrs);
+  if (aAttrKeys.length !== bAttrKeys.length) return false;
+  for (const k of aAttrKeys) {
+    if (aAttrs[k] !== bAttrs[k]) return false;
+  }
+  const aMarks = a.marks ?? [];
+  const bMarks = b.marks ?? [];
+  if (aMarks.length !== bMarks.length) return false;
+  for (let i = 0; i < aMarks.length; i++) {
+    if (aMarks[i].type !== bMarks[i].type) return false;
+    const am = (aMarks[i].attrs ?? {}) as Record<string, unknown>;
+    const bm = (bMarks[i].attrs ?? {}) as Record<string, unknown>;
+    const amk = Object.keys(am);
+    const bmk = Object.keys(bm);
+    if (amk.length !== bmk.length) return false;
+    for (const k of amk) if (am[k] !== bm[k]) return false;
+  }
+  const aText = a.text ?? '';
+  const bText = b.text ?? '';
+  if (aText !== bText) return false;
+  const aContent = a.content ?? [];
+  const bContent = b.content ?? [];
+  if (aContent.length !== bContent.length) return false;
+  for (let i = 0; i < aContent.length; i++) {
+    if (!editorEqual(aContent[i], bContent[i])) return false;
+  }
+  return true;
 }

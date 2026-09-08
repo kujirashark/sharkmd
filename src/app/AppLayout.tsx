@@ -230,6 +230,7 @@ export function AppLayout() {
                   autoSaveRef.current?.schedule(active.id);
                 }}
                 onEditorReady={setEditor}
+                currentFilePath={active.path}
               />
             ) : (
               <div style={{ padding: 40, color: 'var(--muted)', textAlign: 'center' }}>
