@@ -10,6 +10,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import type { Editor as TiptapEditor, JSONContent } from '@tiptap/core';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MarkdownInputRules } from './extensions/markdown-input-rules';
 import { MarkdownPaste } from './extensions/markdown-paste';
 import { MarkdownKeymap } from './extensions/markdown-keymap';
@@ -27,6 +28,7 @@ export interface EditorProps {
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] };
 
 export function Editor({ value, onChange, onEditorReady, currentFilePath }: EditorProps) {
+  const { t } = useTranslation();
   // Always initialize with an empty doc; sync real content via useEffect.
   const editor = useEditor({
     extensions: [
@@ -100,8 +102,20 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath }: Edit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentFilePath, editor]);
 
+  // Mirror the i18n placeholder onto the ProseMirror root as a data
+  // attribute, which themes.css reads back via `attr(...)` to populate the
+  // `::before` pseudo-element on an empty paragraph.
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom as HTMLElement;
+    const text = t('editor.placeholder');
+    if (dom.getAttribute('data-i18n-placeholder') !== text) {
+      dom.setAttribute('data-i18n-placeholder', text);
+    }
+  }, [editor, t]);
+
   if (!editor) {
-    return <div style={{ padding: 24, color: 'var(--muted)' }}>编辑器加载中…</div>;
+    return <div style={{ padding: 24, color: 'var(--muted)' }}>{t('editor.loading')}</div>;
   }
   return <EditorContent editor={editor} />;
 }

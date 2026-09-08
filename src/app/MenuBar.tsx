@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Editor } from '@tiptap/core';
 import { save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { useTranslation } from 'react-i18next';
 import { tauri } from '../tauri/client';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { serializeMarkdown } from '../editor/bridge';
@@ -8,6 +9,7 @@ import { useThemeStore } from '../theme/store';
 import { useTabsStore } from '../tabs/store';
 import { exportToHTML, exportToPDF } from '../export/export-html';
 import { exportToDocx, blobToUint8Array } from '../export/export-docx';
+import i18n from '../i18n';
 
 export interface MenuBarProps {
   editor: Editor | null;
@@ -23,6 +25,9 @@ export interface MenuBarProps {
 }
 
 interface MenuItem {
+  /** Stable identifier — used as React key. Must be globally unique so that
+   *  switching language doesn't force React to remount every menu item. */
+  id: string;
   label: string;
   shortcut?: string;
   disabled?: boolean;
@@ -31,6 +36,7 @@ interface MenuItem {
 }
 
 interface MenuDef {
+  id: string;
   label: string;
   items: MenuItem[];
 }
@@ -39,6 +45,7 @@ export function MenuBar({
   editor, onChooseDir, onOpenFile, activeId,
   showSidebar, showOutline, onToggleSidebar, onToggleOutline, onOpenFind,
 }: MenuBarProps) {
+  const { t } = useTranslation();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const setTheme = useThemeStore((s) => s.setTheme);
   const themeName = useThemeStore((s) => s.theme);
@@ -50,13 +57,30 @@ export function MenuBar({
     if (fn) fn();
   };
 
+  // Switch the UI language and persist via settings. Errors are swallowed:
+  // language switch must not crash the app even if the disk write fails.
+  const switchLang = async (lng: string) => {
+    try {
+      await i18n.changeLanguage(lng);
+    } catch {
+      // ignore — i18next itself never rejects
+    }
+    try {
+      const s = await tauri.getSettings();
+      await tauri.setSettings({ ...s, language: lng });
+    } catch {
+      // ignore
+    }
+  };
+
   const menus: MenuDef[] = [
     {
-      label: '文件',
+      id: 'file',
+      label: t('menu.file.label'),
       items: [
-        { label: '新建文件', shortcut: 'Ctrl+N', run: () => {
+        { id: 'file-new', label: t('menu.file.new'), shortcut: 'Ctrl+N', run: () => {
           if (!editor) return;
-          const name = window.prompt('新文件名称', 'untitled');
+          const name = window.prompt(t('dialog.newFile'), 'untitled');
           if (!name) return;
           const safe = name.replace(/[\\/:*?"<>|]/g, '_').trim();
           const filename = safe.endsWith('.md') ? safe : safe + '.md';
@@ -66,19 +90,19 @@ export function MenuBar({
           const full = baseDir ? baseDir + '\\' + filename : filename;
           tauri.saveFile(full, '').then(() => {
             onOpenFile(full);
-          }).catch((e) => window.alert(`无法创建: ${e}`));
+          }).catch((e) => window.alert(t('message.cannotCreate', { error: String(e) })));
         } },
-        { label: '选择工作目录…', run: onChooseDir },
-        { label: '打开文件…', shortcut: 'Ctrl+O', run: async () => {
+        { id: 'file-choose-dir', label: t('menu.file.chooseDir'), run: onChooseDir },
+        { id: 'file-open', label: t('menu.file.openFile'), shortcut: 'Ctrl+O', run: async () => {
           const selected = await openDialog({
             multiple: false,
-            title: '打开 Markdown 文件',
+            title: t('dialog.openMarkdown'),
             filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
           });
           if (typeof selected === 'string' && selected) onOpenFile(selected);
         } },
-        { separator: true, label: '' },
-        { label: '保存', shortcut: 'Ctrl+S', disabled: !editor, run: () => {
+        { id: 'file-sep-1', separator: true, label: '' },
+        { id: 'file-save', label: t('menu.file.save'), shortcut: 'Ctrl+S', disabled: !editor, run: () => {
           if (!editor || !activeId) return;
           const current = tabs.find((t) => t.id === activeId);
           if (!current) return;
@@ -86,10 +110,10 @@ export function MenuBar({
           tauri.saveFile(current.path, md).then((res) => {
             useTabsStore.getState().setMtime(current.id, res.mtimeMs);
             useTabsStore.getState().updateContent(current.id, current.content, false);
-          }).catch((e) => window.alert(`保存失败: ${e}`));
+          }).catch((e) => window.alert(t('message.saveFailure', { error: String(e) })));
         } },
-        { separator: true, label: '' },
-        { label: '导出为 HTML…', disabled: !editor, run: async () => {
+        { id: 'file-sep-2', separator: true, label: '' },
+        { id: 'file-export-html', label: t('menu.file.exportHtml'), disabled: !editor, run: async () => {
           if (!editor) return;
           const current = tabs.find((t) => t.id === activeId);
           const baseName = current ? current.title.replace(/\.md$/i, '') : 'untitled';
@@ -97,37 +121,37 @@ export function MenuBar({
           try {
             const html = await exportToHTML(editor.getJSON(), { title: baseName, theme });
             const dest = await saveDialog({
-              title: '导出为 HTML',
+              title: t('dialog.exportHtml'),
               defaultPath: baseName + '.html',
               filters: [{ name: 'HTML', extensions: ['html'] }],
             });
             if (typeof dest === 'string' && dest) {
               await tauri.saveFile(dest, html);
-              window.alert(`已导出到 ${dest}`);
+              window.alert(t('message.exportedTo', { dest }));
             }
           } catch (e) {
-            window.alert(`导出失败: ${e}`);
+            window.alert(t('message.exportFailure', { error: String(e) }));
           }
         } },
-        { label: '导出为 PDF…', disabled: !editor, run: async () => {
+        { id: 'file-export-pdf', label: t('menu.file.exportPdf'), disabled: !editor, run: async () => {
           if (!editor) return;
           const current = tabs.find((t) => t.id === activeId);
           const baseName = current ? current.title.replace(/\.md$/i, '') : 'untitled';
           const theme = useThemeStore.getState().theme === 'dark' ? 'github-dark' : 'github-light';
           const dest = await saveDialog({
-            title: '导出为 PDF',
+            title: t('dialog.exportPdf'),
             defaultPath: baseName + '.pdf',
             filters: [{ name: 'PDF', extensions: ['pdf'] }],
           });
           if (typeof dest !== 'string' || !dest) return;
           try {
             await exportToPDF(editor.getJSON(), { title: baseName, theme }, dest);
-            window.alert(`已导出到 ${dest}`);
+            window.alert(t('message.exportedTo', { dest }));
           } catch (e) {
-            window.alert(`PDF 导出失败: ${e}`);
+            window.alert(t('message.exportPdfFailure', { error: String(e) }));
           }
         } },
-        { label: '导出为 Word (.docx)…', disabled: !editor, run: async () => {
+        { id: 'file-export-docx', label: t('menu.file.exportDocx'), disabled: !editor, run: async () => {
           if (!editor) return;
           const current = tabs.find((t) => t.id === activeId);
           const baseName = current ? current.title.replace(/\.md$/i, '') : 'untitled';
@@ -135,67 +159,70 @@ export function MenuBar({
           try {
             const blob = await exportToDocx(editor.getJSON(), { title: baseName, theme });
             const dest = await saveDialog({
-              title: '导出为 Word (.docx)',
+              title: t('dialog.exportDocx'),
               defaultPath: baseName + '.docx',
               filters: [{ name: 'Word Document', extensions: ['docx'] }],
             });
             if (typeof dest === 'string' && dest) {
               const bytes = await blobToUint8Array(blob);
               await tauri.saveBinaryFile(dest, bytes);
-              window.alert(`已导出到 ${dest}\n\n用 Word 2016+ / WPS Office / LibreOffice 打开`);
+              window.alert(t('message.exportedToWithHint', { dest }));
             }
           } catch (e) {
-            window.alert(`Word 导出失败: ${e}`);
+            window.alert(t('message.exportDocxFailure', { error: String(e) }));
           }
         } },
-        { label: '关闭当前标签', shortcut: 'Ctrl+W', disabled: !activeId, run: () => { if (activeId) closeTab(activeId); } },
+        { id: 'file-close-tab', label: t('menu.file.closeTab'), shortcut: 'Ctrl+W', disabled: !activeId, run: () => { if (activeId) closeTab(activeId); } },
       ],
     },
     {
-      label: '编辑',
+      id: 'edit',
+      label: t('menu.edit.label'),
       items: [
-        { label: '撤销', shortcut: 'Ctrl+Z', disabled: !editor, run: () => editor?.chain().focus().undo().run() },
-        { label: '重做', shortcut: 'Ctrl+Y', disabled: !editor, run: () => editor?.chain().focus().redo().run() },
-        { separator: true, label: '' },
-        { label: '查找…', shortcut: 'Ctrl+F', run: () => onOpenFind() },
+        { id: 'edit-undo', label: t('menu.edit.undo'), shortcut: 'Ctrl+Z', disabled: !editor, run: () => editor?.chain().focus().undo().run() },
+        { id: 'edit-redo', label: t('menu.edit.redo'), shortcut: 'Ctrl+Y', disabled: !editor, run: () => editor?.chain().focus().redo().run() },
+        { id: 'edit-sep', separator: true, label: '' },
+        { id: 'edit-find', label: t('menu.edit.find'), shortcut: 'Ctrl+F', run: () => onOpenFind() },
       ],
     },
     {
-      label: '段落',
+      id: 'paragraph',
+      label: t('menu.paragraph.label'),
       items: [
-        { label: '一级标题', shortcut: 'Ctrl+1', disabled: !editor, run: () => editor?.chain().focus().toggleHeading({ level: 1 }).run() },
-        { label: '二级标题', shortcut: 'Ctrl+2', disabled: !editor, run: () => editor?.chain().focus().toggleHeading({ level: 2 }).run() },
-        { label: '三级标题', shortcut: 'Ctrl+3', disabled: !editor, run: () => editor?.chain().focus().toggleHeading({ level: 3 }).run() },
-        { label: '正文', shortcut: 'Ctrl+0', disabled: !editor, run: () => editor?.chain().focus().setParagraph().run() },
-        { separator: true, label: '' },
-        { label: '无序列表', disabled: !editor, run: () => editor?.chain().focus().toggleBulletList().run() },
-        { label: '有序列表', disabled: !editor, run: () => editor?.chain().focus().toggleOrderedList().run() },
-        { label: '引用', disabled: !editor, run: () => editor?.chain().focus().toggleBlockquote().run() },
-        { label: '代码块', disabled: !editor, run: () => editor?.chain().focus().toggleCodeBlock().run() },
-        { label: '分割线', disabled: !editor, run: () => editor?.chain().focus().setHorizontalRule().run() },
+        { id: 'paragraph-h1', label: t('menu.paragraph.h1'), shortcut: 'Ctrl+1', disabled: !editor, run: () => editor?.chain().focus().toggleHeading({ level: 1 }).run() },
+        { id: 'paragraph-h2', label: t('menu.paragraph.h2'), shortcut: 'Ctrl+2', disabled: !editor, run: () => editor?.chain().focus().toggleHeading({ level: 2 }).run() },
+        { id: 'paragraph-h3', label: t('menu.paragraph.h3'), shortcut: 'Ctrl+3', disabled: !editor, run: () => editor?.chain().focus().toggleHeading({ level: 3 }).run() },
+        { id: 'paragraph-p', label: t('menu.paragraph.paragraph'), shortcut: 'Ctrl+0', disabled: !editor, run: () => editor?.chain().focus().setParagraph().run() },
+        { id: 'paragraph-sep-1', separator: true, label: '' },
+        { id: 'paragraph-ul', label: t('menu.paragraph.ul'), disabled: !editor, run: () => editor?.chain().focus().toggleBulletList().run() },
+        { id: 'paragraph-ol', label: t('menu.paragraph.ol'), disabled: !editor, run: () => editor?.chain().focus().toggleOrderedList().run() },
+        { id: 'paragraph-quote', label: t('menu.paragraph.quote'), disabled: !editor, run: () => editor?.chain().focus().toggleBlockquote().run() },
+        { id: 'paragraph-codeblock', label: t('menu.paragraph.codeblock'), disabled: !editor, run: () => editor?.chain().focus().toggleCodeBlock().run() },
+        { id: 'paragraph-hr', label: t('menu.paragraph.hr'), disabled: !editor, run: () => editor?.chain().focus().setHorizontalRule().run() },
       ],
     },
     {
-      label: '格式',
+      id: 'format',
+      label: t('menu.format.label'),
       items: [
-        { label: '加粗', shortcut: 'Ctrl+B', disabled: !editor, run: () => editor?.chain().focus().toggleBold().run() },
-        { label: '斜体', shortcut: 'Ctrl+I', disabled: !editor, run: () => editor?.chain().focus().toggleItalic().run() },
-        { label: '删除线', disabled: !editor, run: () => editor?.chain().focus().toggleStrike().run() },
-        { label: '行内代码', shortcut: 'Ctrl+`', disabled: !editor, run: () => editor?.chain().focus().toggleCode().run() },
-        { separator: true, label: '' },
-        { label: '插入链接…', shortcut: 'Ctrl+K', disabled: !editor, run: () => {
+        { id: 'format-bold', label: t('menu.format.bold'), shortcut: 'Ctrl+B', disabled: !editor, run: () => editor?.chain().focus().toggleBold().run() },
+        { id: 'format-italic', label: t('menu.format.italic'), shortcut: 'Ctrl+I', disabled: !editor, run: () => editor?.chain().focus().toggleItalic().run() },
+        { id: 'format-strike', label: t('menu.format.strike'), disabled: !editor, run: () => editor?.chain().focus().toggleStrike().run() },
+        { id: 'format-code', label: t('menu.format.inlineCode'), shortcut: 'Ctrl+`', disabled: !editor, run: () => editor?.chain().focus().toggleCode().run() },
+        { id: 'format-sep-1', separator: true, label: '' },
+        { id: 'format-link', label: t('menu.format.link'), shortcut: 'Ctrl+K', disabled: !editor, run: () => {
           if (!editor) return;
-          const href = window.prompt('链接 URL');
+          const href = window.prompt(t('dialog.linkUrl'));
           if (!href) return;
           editor.chain().focus().toggleLink({ href }).run();
         } },
-        { label: '插入图片…', disabled: !editor, run: () => {
+        { id: 'format-image', label: t('menu.format.image'), disabled: !editor, run: () => {
           if (!editor) return;
-          const url = window.prompt('图片 URL（也可直接拖拽图片到编辑器）');
+          const url = window.prompt(t('dialog.imageUrl'));
           if (!url) return;
           editor.chain().focus().setImage({ src: url, alt: '' }).run();
         } },
-        { label: '插入表格 3×3', disabled: !editor, run: () => {
+        { id: 'format-table', label: t('menu.format.table'), disabled: !editor, run: () => {
           if (!editor) return;
           editor.commands.focus();
           editor.chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
@@ -203,28 +230,37 @@ export function MenuBar({
       ],
     },
     {
-      label: '视图',
+      id: 'view',
+      label: t('menu.view.label'),
       items: [
-        { label: showSidebar ? '✓ 侧栏' : '侧栏', run: onToggleSidebar },
-        { label: showOutline ? '✓ 大纲' : '大纲', run: onToggleOutline },
-        { separator: true, label: '' },
-        { label: '查找', shortcut: 'Ctrl+F', run: () => onOpenFind() },
+        { id: 'view-sidebar', label: (showSidebar ? '✓ ' : '') + t('menu.view.sidebar'), run: onToggleSidebar },
+        { id: 'view-outline', label: (showOutline ? '✓ ' : '') + t('menu.view.outline'), run: onToggleOutline },
+        { id: 'view-sep', separator: true, label: '' },
+        { id: 'view-find', label: t('menu.view.find'), shortcut: 'Ctrl+F', run: () => onOpenFind() },
       ],
     },
     {
-      label: '主题',
+      id: 'theme',
+      label: t('menu.theme.label'),
       items: [
-        { label: themeName === 'light' ? '✓ 浅色' : '浅色', run: () => setTheme('light') },
-        { label: themeName === 'dark' ? '✓ 深色' : '深色', run: () => setTheme('dark') },
+        { id: 'theme-light', label: (themeName === 'light' ? '✓ ' : '') + t('menu.theme.light'), run: () => setTheme('light') },
+        { id: 'theme-dark', label: (themeName === 'dark' ? '✓ ' : '') + t('menu.theme.dark'), run: () => setTheme('dark') },
       ],
     },
     {
-      label: '帮助',
+      id: 'language',
+      label: t('menu.language.label'),
       items: [
-        { label: '关于 sharkmd', run: () => window.alert('sharkmd — 产品级 Markdown 编辑器\nMVP for Windows\n\nTauri 2 + React + TipTap') },
-        { label: 'Markdown 快捷键', run: () => window.alert(
-          '# 空格     = H1\n## 空格    = H2\n### 空格   = H3\n**文字**   = 加粗\n*文字*     = 斜体\n~~文字~~   = 删除线\n`代码`     = 行内代码\n```代码``` = 代码块\n- 空格     = 无序列表\n1. 空格    = 有序列表\n> 空格     = 引用\n--- 空格   = 分割线\n[T](URL)  = 链接'
-        ) },
+        { id: 'lang-zh', label: (i18n.language === 'zh-CN' ? '✓ ' : '') + t('menu.language.zh'), run: () => switchLang('zh-CN') },
+        { id: 'lang-en', label: (i18n.language === 'en-US' ? '✓ ' : '') + t('menu.language.en'), run: () => switchLang('en-US') },
+      ],
+    },
+    {
+      id: 'help',
+      label: t('menu.help.label'),
+      items: [
+        { id: 'help-about', label: t('menu.help.about'), run: () => window.alert(t('menu.aboutBody')) },
+        { id: 'help-shortcuts', label: t('menu.help.shortcuts'), run: () => window.alert(t('menu.shortcutsBody')) },
       ],
     },
   ];
@@ -232,21 +268,21 @@ export function MenuBar({
   return (
     <div className="menubar" role="menubar">
       {menus.map((m) => (
-        <div key={m.label} className="menu-item-wrap"
+        <div key={m.id} className="menu-item-wrap"
              onMouseLeave={() => { /* keep open until click outside */ }}>
           <button
-            className={`menu-trigger ${openMenu === m.label ? 'active' : ''}`}
-            onClick={() => setOpenMenu(openMenu === m.label ? null : m.label)}
+            className={`menu-trigger ${openMenu === m.id ? 'active' : ''}`}
+            onClick={() => setOpenMenu(openMenu === m.id ? null : m.id)}
           >
             {m.label}
           </button>
-          {openMenu === m.label && (
+          {openMenu === m.id && (
             <div className="menu-dropdown" role="menu">
-              {m.items.map((it, i) => it.separator ? (
-                <div key={i} className="menu-separator" />
+              {m.items.map((it) => it.separator ? (
+                <div key={it.id} className="menu-separator" />
               ) : (
                 <button
-                  key={i}
+                  key={it.id}
                   className="menu-dropdown-item"
                   disabled={it.disabled}
                   onClick={() => run(it.run)}

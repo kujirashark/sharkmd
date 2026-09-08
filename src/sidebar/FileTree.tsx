@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { tauri, type DirEntry } from '../tauri/client';
+import { useT } from '../i18n/use-translation';
 
 export interface FileTreeProps {
   /** The root working directory (immutable, set from settings/dialog). */
@@ -14,12 +15,13 @@ export interface FileTreeProps {
  * Each directory is lazy-loaded: contents are fetched only when first expanded.
  */
 export function FileTree({ rootPath, onOpen, onCreate }: FileTreeProps) {
+  const t = useT();
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   const handleNew = () => {
     if (!onCreate) return;
-    const name = window.prompt('新文件名称（不含扩展名）', 'untitled');
+    const name = window.prompt(t('dialog.newFileInTree'), 'untitled');
     if (!name) return;
     const safe = name.replace(/[\\/:*?"<>|]/g, '_').trim();
     if (!safe) return;
@@ -32,19 +34,19 @@ export function FileTree({ rootPath, onOpen, onCreate }: FileTreeProps) {
   return (
     <>
       <div className="sidebar-header">
-        <span style={{ flex: 1 }}>文件</span>
+        <span style={{ flex: 1 }}>{t('fileTree.header')}</span>
         {onCreate && (
           <button
             onClick={handleNew}
-            title="新建 Markdown 文件"
+            title={t('fileTree.newFileTitle')}
             style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: '0 4px', fontSize: 14 }}
           >
-            + 新建
+            {t('fileTree.newFile')}
           </button>
         )}
         <button
           onClick={refresh}
-          title="刷新"
+          title={t('fileTree.refresh')}
           style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: '0 4px' }}
         >
           ↻
@@ -66,6 +68,7 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ path, name, depth, onOpen, refreshKey }: TreeNodeProps) {
+  const t = useT();
   const [entries, setEntries] = useState<DirEntry[] | null>(null);
   const [expanded, setExpanded] = useState(depth < 1); // root auto-expanded
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +114,7 @@ function TreeNode({ path, name, depth, onOpen, refreshKey }: TreeNodeProps) {
         <>
           {error && <li style={{ paddingLeft: paddingLeft + 14, color: '#ef4444', fontSize: 12 }}>⚠ {error}</li>}
           {entries === null && !error && (
-            <li style={{ paddingLeft: paddingLeft + 14, color: 'var(--muted)', fontSize: 12 }}>加载中…</li>
+            <li style={{ paddingLeft: paddingLeft + 14, color: 'var(--muted)', fontSize: 12 }}>{t('fileTree.loading')}</li>
           )}
           {dirs.map((d) => (
             <TreeNode key={d.path} path={d.path} name={d.name} depth={depth + 1} onOpen={onOpen} refreshKey={refreshKey} />
@@ -129,7 +132,7 @@ function TreeNode({ path, name, depth, onOpen, refreshKey }: TreeNodeProps) {
             </li>
           ))}
           {entries !== null && !error && dirs.length === 0 && files.length === 0 && (
-            <li style={{ paddingLeft: paddingLeft + 14, color: 'var(--muted)', fontSize: 12 }}>空目录</li>
+            <li style={{ paddingLeft: paddingLeft + 14, color: 'var(--muted)', fontSize: 12 }}>{t('fileTree.empty')}</li>
           )}
         </>
       )}

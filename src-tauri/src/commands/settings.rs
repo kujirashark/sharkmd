@@ -11,6 +11,19 @@ pub struct Settings {
     pub custom_css_path: Option<String>,
     #[serde(default)]
     pub last_root_path: Option<String>,
+    /// UI language code (BCP-47). Defaults to "zh-CN" for backward compatibility
+    /// with pre-v0.3 settings.json files. Validated on the frontend; the
+    /// backend treats this as opaque storage.
+    #[serde(default = "default_language")]
+    pub language: String,
+}
+
+/// Default language used when the field is missing from settings.json.
+/// Returning a function (vs a literal default) preserves backward
+/// compatibility: existing settings.json files without `language` deserialize
+/// cleanly to "zh-CN" instead of erroring.
+fn default_language() -> String {
+    "zh-CN".into()
 }
 
 pub fn settings_path() -> PathBuf {
@@ -26,6 +39,7 @@ pub async fn get_settings() -> AppResult<Settings> {
             font_size: 16,
             custom_css_path: None,
             last_root_path: None,
+            language: default_language(),
         });
     }
     let bytes = tokio::fs::read(&p).await?;

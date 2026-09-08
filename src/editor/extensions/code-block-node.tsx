@@ -2,6 +2,7 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { useEffect, useState } from 'react';
 import type { NodeViewProps } from '@tiptap/react';
+import { useTranslation } from 'react-i18next';
 
 declare global {
   interface Window {
@@ -53,6 +54,7 @@ function getThemeName(): 'github-light' | 'github-dark' {
 }
 
 function CodeBlockNodeView({ node }: NodeViewProps) {
+  const { t } = useTranslation();
   const language = (node.attrs.language as string | null) || '';
   const text = node.textContent || '';
   const isMermaid = language === 'mermaid';
@@ -147,11 +149,11 @@ function CodeBlockNodeView({ node }: NodeViewProps) {
         data-language="mermaid"
       >
         {error ? (
-          <pre className="mermaid-error">⚠ Mermaid 渲染失败: {error}\n\n{text}</pre>
+          <pre className="mermaid-error">{t('mermaid.renderError', { msg: error })}\n\n{text}</pre>
         ) : svg ? (
           <div className="mermaid-svg" dangerouslySetInnerHTML={{ __html: svg }} />
         ) : (
-          <pre className="mermaid-loading">渲染中...\n\n{text}</pre>
+          <pre className="mermaid-loading">{t('mermaid.loading')}\n\n{text}</pre>
         )}
       </div>
     );

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/core';
 import { useTabsStore } from '../tabs/store';
+import { useT } from '../i18n/use-translation';
 
 export interface StatusBarProps {
   editor: Editor | null;
 }
 
 export function StatusBar({ editor }: StatusBarProps) {
+  const t = useT();
   const activeId = useTabsStore((s) => s.activeId);
   const tabs = useTabsStore((s) => s.tabs);
   const active = tabs.find((t) => t.id === activeId);
@@ -40,21 +42,30 @@ export function StatusBar({ editor }: StatusBarProps) {
   }, [editor]);
 
   if (!active) {
-    return <div className="statusbar empty">无打开文件</div>;
+    return <div className="statusbar empty">{t('status.noFile')}</div>;
   }
+
+  // Map TipTap block kind → i18n key suffix
+  const kindMap: Record<string, string> = {
+    heading: t('status.posKindH'),
+    paragraph: t('status.posKindP'),
+    codeBlock: t('status.posKindC'),
+    blockquote: t('status.posKindQ'),
+  };
+  const kind = kindMap[stats.blockKind] ?? '';
 
   return (
     <div className="statusbar">
       <span className="status-left">
-        {active.dirty ? '● 未保存' : '✓ 已自动保存'}
+        {active.dirty ? t('status.unsaved') : t('status.autoSaved')}
         <span style={{ margin: '0 8px', color: 'var(--border)' }}>|</span>
         <span style={{ color: 'var(--muted)' }}>{active.path}</span>
       </span>
       <span className="status-center">
-        {editor ? `${stats.words} 词 · ${stats.chars} 字符` : '—'}
+        {editor ? t('status.wordsChars', { words: stats.words, chars: stats.chars }) : '—'}
       </span>
       <span className="status-right">
-        {editor ? `${stats.blockKind === 'heading' ? 'H' : ''}${stats.blockKind === 'paragraph' ? 'P' : ''}${stats.blockKind === 'codeBlock' ? 'C' : ''}${stats.blockKind === 'blockquote' ? 'Q' : ''}  Ln ${stats.ln}, Col ${stats.col}` : ''}
+        {editor ? t('status.pos', { kind, ln: stats.ln, col: stats.col }) : ''}
         <span style={{ margin: '0 8px', color: 'var(--border)' }}>|</span>
         <span style={{ color: 'var(--muted)' }}>UTF-8</span>
       </span>

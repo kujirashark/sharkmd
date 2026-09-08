@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { tauri } from '../tauri/client';
+import { useT } from '../i18n/use-translation';
 
 export interface Asset {
   name: string;
@@ -22,6 +23,7 @@ export function AssetsPanel({
   onInsert: (markdown: string) => void;
   onOpen?: (path: string) => void;
 }) {
+  const t = useT();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -61,15 +63,15 @@ export function AssetsPanel({
   }, [filePath]);
 
   if (!filePath) {
-    return <div className="assets-empty">打开一个文件以查看其 assets/ 目录</div>;
+    return <div className="assets-empty">{t('assets.emptyOpenFile')}</div>;
   }
   if (loading) {
-    return <div className="assets-empty">加载中…</div>;
+    return <div className="assets-empty">{t('assets.loading')}</div>;
   }
   if (error) {
     return (
       <div className="assets-empty">
-        <div>无法读取 assets/ 目录</div>
+        <div>{t('assets.readError')}</div>
         <div className="assets-error-detail">{error}</div>
       </div>
     );
@@ -77,8 +79,8 @@ export function AssetsPanel({
   if (assets.length === 0) {
     return (
       <div className="assets-empty">
-        <div>暂无图片</div>
-        <div className="assets-hint">拖入或粘贴图片会自动保存到该目录</div>
+        <div>{t('assets.empty')}</div>
+        <div className="assets-hint">{t('assets.hint')}</div>
       </div>
     );
   }

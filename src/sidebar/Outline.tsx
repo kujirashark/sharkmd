@@ -1,3 +1,5 @@
+import { useT } from '../i18n/use-translation';
+
 export interface Heading { level: 1 | 2 | 3 | 4; text: string; pos?: number }
 
 export interface OutlineProps {
@@ -6,17 +8,18 @@ export interface OutlineProps {
 }
 
 export function Outline({ headings, onItemClick }: OutlineProps) {
+  const t = useT();
   if (headings.length === 0) {
     return (
       <>
-        <div className="outline-header">大纲</div>
-        <div className="empty">无标题</div>
+        <div className="outline-header">{t('outline.title')}</div>
+        <div className="empty">{t('outline.empty')}</div>
       </>
     );
   }
   return (
     <>
-      <div className="outline-header">大纲 ({headings.length})</div>
+      <div className="outline-header">{t('outline.withCount', { count: headings.length })}</div>
       <ul className="outline">
         {headings.map((h, i) => (
           <li

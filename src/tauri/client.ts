@@ -4,7 +4,7 @@ export interface FileContent { text: string; size: number; mtimeMs: number }
 export interface SaveResult { mtimeMs: number }
 export interface DirEntry { name: string; path: string; isDir: boolean; isMd: boolean }
 export interface DraftEntry { fileId: string; path: string; savedAtMs: number }
-export interface Settings { theme: string; fontSize: number; customCssPath: string | null; lastRootPath?: string | null }
+export interface Settings { theme: string; fontSize: number; customCssPath: string | null; lastRootPath?: string | null; language?: string }
 export interface AppError { code: string; message: string; detail: string | null }
 
 export const tauri = {

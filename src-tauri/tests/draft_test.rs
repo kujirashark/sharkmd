@@ -32,9 +32,11 @@ async fn settings_default_and_persist() {
         font_size: 18,
         custom_css_path: None,
         last_root_path: None,
+        language: "en-US".into(),
     };
     settings::set_settings(s2.clone()).await.unwrap();
     let s3 = settings::get_settings().await.unwrap();
     assert_eq!(s3.theme, "dark");
     assert_eq!(s3.font_size, 18);
+    assert_eq!(s3.language, "en-US");
 }

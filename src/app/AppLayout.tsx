@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { useTranslation } from 'react-i18next';
 import { TabsBar } from '../tabs/TabsBar';
 import { SidebarTabs, type SidebarTab } from './SidebarTabs';
 import { extractHeadings, type Heading } from '../sidebar/Outline';
@@ -14,9 +15,11 @@ import { tauri } from '../tauri/client';
 import { parseMarkdown } from '../editor/bridge';
 import { createAutoSave } from '../autosave/manager';
 import { useThemeStore, type ThemeName } from '../theme/store';
+import i18n from '../i18n';
 import type { Editor as TiptapEditor } from '@tiptap/core';
 
 export function AppLayout() {
+  const { t } = useTranslation();
   const tabs = useTabsStore((s) => s.tabs);
   const activeId = useTabsStore((s) => s.activeId);
   const addTab = useTabsStore((s) => s.addTab);
@@ -34,6 +37,7 @@ export function AppLayout() {
     tauri.getSettings().then((s) => {
       useThemeStore.getState().setTheme(s.theme as ThemeName);
       if (s.lastRootPath) setRootPath(s.lastRootPath);
+      if (s.language) i18n.changeLanguage(s.language).catch(() => null);
     }).catch(() => null);
   }, []);
 
@@ -81,7 +85,7 @@ export function AppLayout() {
         const lastSavedAt = lastSaveAtRef.current.get(path) ?? 0;
         if (Date.now() - lastSavedAt < 1500 && mtimeMs <= cur.mtimeMs + 1) return;
         if (mtimeMs <= cur.mtimeMs) return;
-        const ok = window.confirm(`文件已被外部修改：${path}\n是否重新加载磁盘版本？\n（取消将保留当前编辑）`);
+        const ok = window.confirm(t('message.externalChangeConfirm', { path }));
         if (!ok) return;
         try {
           const fc = await tauri.openFile(path);
@@ -97,14 +101,14 @@ export function AppLayout() {
   const openSingleFile = useCallback(async () => {
     const selected = await openDialog({
       multiple: false,
-      title: '打开 Markdown 文件',
+      title: t('dialog.openMarkdown'),
       filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
       defaultPath: rootPath || undefined,
     });
     if (typeof selected === 'string' && selected) {
       openFileByPath(selected);
     }
-  }, [rootPath]);
+  }, [rootPath, t]);
 
   const openFileByPath = useCallback(async (path: string) => {
     try {
@@ -118,7 +122,7 @@ export function AppLayout() {
       });
       await tauri.watch(path).catch(() => null);
     } catch (e) {
-      window.alert(`无法打开文件: ${e}`);
+      window.alert(t('message.cannotOpen', { error: String(e) }));
     }
   }, [addTab]);
 
@@ -126,11 +130,11 @@ export function AppLayout() {
     const selected = await openDialog({
       directory: true,
       multiple: false,
-      title: '选择工作目录',
+      title: t('dialog.chooseDir'),
       defaultPath: rootPath || undefined,
     });
     if (typeof selected === 'string' && selected) setRootPath(selected);
-  }, [rootPath]);
+  }, [rootPath, t]);
 
   // Click outline → scroll editor to that heading
   const handleOutlineClick = useCallback((h: Heading) => {
@@ -200,7 +204,7 @@ export function AppLayout() {
                     await tauri.watch(path).catch(() => null);
                     setFileTreeKey((k) => k + 1);
                   } catch (e) {
-                    window.alert(`无法创建文件: ${e}`);
+                    window.alert(t('message.cannotCreateFile', { error: String(e) }));
                   }
                 }}
                 onOutlineClick={handleOutlineClick}
@@ -208,10 +212,10 @@ export function AppLayout() {
             ) : (
               <>
                 <div className="sidebar-tabs">
-                  <button className="sidebar-tab active">文件</button>
+                  <button className="sidebar-tab active">{t('sidebar.files')}</button>
                 </div>
                 <div className="empty" style={{ padding: '40px 20px', textAlign: 'center' }}>
-                  点击菜单 文件 → 选择工作目录 开始
+                  {t('sidebar.emptyHint')}
                 </div>
               </>
             )}
@@ -235,8 +239,8 @@ export function AppLayout() {
             ) : (
               <div style={{ padding: 40, color: 'var(--muted)', textAlign: 'center' }}>
                 <p style={{ fontSize: 18, marginBottom: 8 }}>sharkmd</p>
-                <p>用 菜单 → 文件 → 打开文件… 或 Ctrl+O 打开一个 .md</p>
-                <p style={{ marginTop: 16, fontSize: 12 }}>或 菜单 → 文件 → 选择工作目录  浏览文件夹</p>
+                <p>{t('sidebar.welcomeHint')}</p>
+                <p style={{ marginTop: 16, fontSize: 12 }}>{t('sidebar.welcomeDirHint')}</p>
               </div>
             )}
           </div>

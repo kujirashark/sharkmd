@@ -279,7 +279,10 @@ body { margin: 0; height: 100vh; overflow: hidden; }
 .editor-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 .ProseMirror { padding: 24px 48px; line-height: 1.7; max-width: 820px; margin: 0 auto; outline: none; min-height: 100%; }
 .ProseMirror p.is-editor-empty:first-child::before {
-  content: '在此输入内容…  试试打 # 空格 = H1，** 加粗 **，``` 代码 ```';
+  /* Placeholder text is supplied via the data-i18n-placeholder attribute set
+   * by Editor.tsx — see src/editor/Editor.tsx. We read it back with attr()
+   * because CSS pseudo-elements cannot call into the i18n runtime. */
+  content: attr(data-i18n-placeholder);
   color: var(--muted);
   pointer-events: none;
   float: left;

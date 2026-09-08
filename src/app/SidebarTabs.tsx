@@ -1,6 +1,7 @@
 import { FileTree } from '../sidebar/FileTree';
 import { Outline, type Heading } from '../sidebar/Outline';
 import { AssetsPanel } from '../sidebar/AssetsPanel';
+import { useT } from '../i18n/use-translation';
 
 export type SidebarTab = 'files' | 'outline' | 'assets';
 
@@ -20,6 +21,7 @@ export function SidebarTabs({
   active, onChange, rootPath, headings, onOpen, onCreate, onOutlineClick,
   activeFilePath, onInsertAsset,
 }: SidebarTabsProps) {
+  const t = useT();
   return (
     <>
       <div className="sidebar-tabs">
@@ -27,19 +29,19 @@ export function SidebarTabs({
           className={`sidebar-tab ${active === 'files' ? 'active' : ''}`}
           onClick={() => onChange('files')}
         >
-          文件
+          {t('sidebar.files')}
         </button>
         <button
           className={`sidebar-tab ${active === 'outline' ? 'active' : ''}`}
           onClick={() => onChange('outline')}
         >
-          大纲
+          {t('sidebar.outline')}
         </button>
         <button
           className={`sidebar-tab ${active === 'assets' ? 'active' : ''}`}
           onClick={() => onChange('assets')}
         >
-          图片
+          {t('sidebar.assets')}
         </button>
       </div>
       {active === 'files' ? (

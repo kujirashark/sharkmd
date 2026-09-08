@@ -1,0 +1,194 @@
+/**
+ * zh-CN locale (default fallback).
+ *
+ * Keys are organized by feature area. Every user-facing string in the
+ * application MUST live here (or en-US.ts). Never hardcode Chinese in
+ * components — that breaks i18n.
+ *
+ * When adding new keys, also add them to en-US.ts. TypeScript doesn't
+ * enforce key parity across these two files; CI/test coverage will catch
+ * missing translations at runtime.
+ */
+const zhCN = {
+  menu: {
+    file: {
+      label: '文件',
+      new: '新建文件',
+      chooseDir: '选择工作目录…',
+      openFile: '打开文件…',
+      save: '保存',
+      exportHtml: '导出为 HTML…',
+      exportPdf: '导出为 PDF…',
+      exportDocx: '导出为 Word (.docx)…',
+      closeTab: '关闭当前标签',
+    },
+    edit: {
+      label: '编辑',
+      undo: '撤销',
+      redo: '重做',
+      find: '查找…',
+    },
+    paragraph: {
+      label: '段落',
+      h1: '一级标题',
+      h2: '二级标题',
+      h3: '三级标题',
+      paragraph: '正文',
+      ul: '无序列表',
+      ol: '有序列表',
+      quote: '引用',
+      codeblock: '代码块',
+      hr: '分割线',
+    },
+    format: {
+      label: '格式',
+      bold: '加粗',
+      italic: '斜体',
+      strike: '删除线',
+      inlineCode: '行内代码',
+      link: '插入链接…',
+      image: '插入图片…',
+      table: '插入表格 3×3',
+    },
+    view: {
+      label: '视图',
+      sidebar: '侧栏',
+      outline: '大纲',
+      find: '查找',
+    },
+    theme: {
+      label: '主题',
+      light: '浅色',
+      dark: '深色',
+    },
+    language: {
+      label: '语言',
+      zh: '中文',
+      en: 'English',
+    },
+    help: {
+      label: '帮助',
+      about: '关于 sharkmd',
+      shortcuts: 'Markdown 快捷键',
+    },
+    aboutBody: 'sharkmd — 产品级 Markdown 编辑器\nMVP for Windows\n\nTauri 2 + React + TipTap',
+    shortcutsBody: '# 空格     = H1\n## 空格    = H2\n### 空格   = H3\n**文字**   = 加粗\n*文字*     = 斜体\n~~文字~~   = 删除线\n`代码`     = 行内代码\n```代码``` = 代码块\n- 空格     = 无序列表\n1. 空格    = 有序列表\n> 空格     = 引用\n--- 空格   = 分割线\n[T](URL)  = 链接',
+  },
+  dialog: {
+    newFile: '新文件名称',
+    newFileInTree: '新文件名称（不含扩展名）',
+    linkUrl: '链接 URL',
+    imageUrl: '图片 URL（也可直接拖拽图片到编辑器）',
+    imageUrlShort: '图片 URL（粘贴地址，或直接拖拽图片到编辑器）',
+    openMarkdown: '打开 Markdown 文件',
+    chooseDir: '选择工作目录',
+    exportHtml: '导出为 HTML',
+    exportPdf: '导出为 PDF',
+    exportDocx: '导出为 Word (.docx)',
+  },
+  message: {
+    cannotCreate: '无法创建: {{error}}',
+    cannotCreateFile: '无法创建文件: {{error}}',
+    cannotOpen: '无法打开文件: {{error}}',
+    saveFailure: '保存失败: {{error}}',
+    exportFailure: '导出失败: {{error}}',
+    exportPdfFailure: 'PDF 导出失败: {{error}}',
+    exportDocxFailure: 'Word 导出失败: {{error}}',
+    exportedTo: '已导出到 {{dest}}',
+    exportedToWithHint:
+      '已导出到 {{dest}}\n\n用 Word 2016+ / WPS Office / LibreOffice 打开',
+    externalChangeConfirm:
+      '文件已被外部修改：{{path}}\n是否重新加载磁盘版本？\n（取消将保留当前编辑）',
+  },
+  status: {
+    noFile: '无打开文件',
+    unsaved: '● 未保存',
+    autoSaved: '✓ 已自动保存',
+    wordsChars: '{{words}} 词 · {{chars}} 字符',
+    pos: '{{kind}}  Ln {{ln}}, Col {{col}}',
+    posKindH: 'H',
+    posKindP: 'P',
+    posKindC: 'C',
+    posKindQ: 'Q',
+  },
+  sidebar: {
+    files: '文件',
+    outline: '大纲',
+    assets: '图片',
+    emptyHint: '点击菜单 文件 → 选择工作目录 开始',
+    welcomeHint: '用 菜单 → 文件 → 打开文件… 或 Ctrl+O 打开一个 .md',
+    welcomeDirHint: '或 菜单 → 文件 → 选择工作目录  浏览文件夹',
+  },
+  toolbar: {
+    h1: '一级标题（行首 # 空格）',
+    h2: '二级标题（行首 ## 空格）',
+    h3: '三级标题（行首 ### 空格）',
+    bold: '加粗（Ctrl+B，**text**）',
+    italic: '斜体（Ctrl+I，*text*）',
+    strike: '删除线（~~text~~）',
+    code: '行内代码（`code`）',
+    ul: '无序列表（行首 - 空格）',
+    ol: '有序列表（行首 1. 空格）',
+    quote: '引用（行首 > 空格）',
+    link: '插入链接（Ctrl+K，格式：[文本](URL)）',
+    hr: '分割线（行首 ---）',
+    table: '插入 3×3 表格（含表头）',
+    codeblock: '代码块（行首 ```）',
+    image: '插入图片（输入 URL 或粘贴/拖拽）',
+  },
+  find: {
+    placeholder: '查找',
+    regexPlaceholder: '正则表达式',
+    noMatch: '无结果',
+    prev: '上一个 (Shift+Enter)',
+    next: '下一个 (Enter)',
+    replace: '替换为',
+    replaceOne: '替换',
+    replaceAll: '全部',
+    toggleReplace: '切换替换',
+    close: '关闭 (Esc)',
+    regex: '正则表达式 (Alt+R)',
+    caseSensitive: '区分大小写 (Alt+C)',
+    regexErrorPrefix: '⚠ ',
+    matchCount: '{{idx}} / {{total}}',
+  },
+  mermaid: {
+    renderError: '⚠ Mermaid 渲染失败: {{msg}}',
+    loading: '渲染中...',
+  },
+  fileTree: {
+    header: '文件',
+    newFile: '+ 新建',
+    newFileTitle: '新建 Markdown 文件',
+    refresh: '刷新',
+    empty: '空目录',
+    loading: '加载中…',
+  },
+  outline: {
+    title: '大纲',
+    withCount: '大纲 ({{count}})',
+    empty: '无标题',
+  },
+  assets: {
+    emptyOpenFile: '打开一个文件以查看其 assets/ 目录',
+    loading: '加载中…',
+    readError: '无法读取 assets/ 目录',
+    empty: '暂无图片',
+    hint: '拖入或粘贴图片会自动保存到该目录',
+  },
+  recovery: {
+    title: '检测到未保存的会话',
+    discard: '丢弃',
+    close: '关闭',
+  },
+  theme: {
+    light: '浅色',
+    dark: '深色',
+  },
+  editor: {
+    placeholder: '在此输入内容…  试试打 # 空格 = H1，** 加粗 **，``` 代码 ```',
+    loading: '编辑器加载中…',
+  },
+};
+
+export default zhCN;

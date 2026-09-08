@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/core';
+import { useT } from '../i18n/use-translation';
 
 export interface FindBarProps {
   editor: Editor | null;
@@ -10,6 +11,7 @@ export interface FindBarProps {
 interface Match { from: number; to: number }
 
 export function FindBar({ editor, open, onClose }: FindBarProps) {
+  const t = useT();
   const [query, setQuery] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [showReplace, setShowReplace] = useState(false);
@@ -139,45 +141,45 @@ export function FindBar({ editor, open, onClose }: FindBarProps) {
         <input
           ref={inputRef}
           type="text"
-          placeholder={useRegex ? '正则表达式' : '查找'}
+          placeholder={useRegex ? t('find.regexPlaceholder') : t('find.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="findbar-input"
           style={regexError ? { borderColor: '#d33' } : undefined}
         />
         <span className="findbar-count">
-          {regexError ? '⚠ ' + regexError
-            : query ? (matches.length === 0 ? '无结果' : `${activeIdx + 1} / ${matches.length}`)
+          {regexError ? t('find.regexErrorPrefix') + regexError
+            : query ? (matches.length === 0 ? t('find.noMatch') : t('find.matchCount', { idx: activeIdx, total: matches.length }))
             : ''}
         </span>
         <button
           onClick={() => setUseRegex((v) => !v)}
-          title="正则表达式 (Alt+R)"
+          title={t('find.regex')}
           className="findbar-toggle"
           data-active={useRegex}
         >.*</button>
         <button
           onClick={() => setCaseSensitive((v) => !v)}
-          title="区分大小写 (Alt+C)"
+          title={t('find.caseSensitive')}
           className="findbar-toggle"
           data-active={caseSensitive}
         >Aa</button>
-        <button onClick={() => setActiveIdx((i) => (i - 1 + matches.length) % Math.max(1, matches.length))} disabled={!matches.length} title="上一个 (Shift+Enter)">↑</button>
-        <button onClick={() => setActiveIdx((i) => (i + 1) % matches.length)} disabled={!matches.length} title="下一个 (Enter)">↓</button>
-        <button onClick={() => setShowReplace((v) => !v)} title="切换替换">{showReplace ? '⌃' : '⌄'}</button>
-        <button onClick={onClose} title="关闭 (Esc)" className="findbar-close">×</button>
+        <button onClick={() => setActiveIdx((i) => (i - 1 + matches.length) % Math.max(1, matches.length))} disabled={!matches.length} title={t('find.prev')}>↑</button>
+        <button onClick={() => setActiveIdx((i) => (i + 1) % matches.length)} disabled={!matches.length} title={t('find.next')}>↓</button>
+        <button onClick={() => setShowReplace((v) => !v)} title={t('find.toggleReplace')}>{showReplace ? '⌃' : '⌄'}</button>
+        <button onClick={onClose} title={t('find.close')} className="findbar-close">×</button>
       </div>
       {showReplace && (
         <div className="findbar-row">
           <input
             type="text"
-            placeholder="替换为"
+            placeholder={t('find.replace')}
             value={replaceText}
             onChange={(e) => setReplaceText(e.target.value)}
             className="findbar-input"
           />
-          <button onClick={replace} disabled={!matches.length} className="findbar-replace-btn">替换</button>
-          <button onClick={replaceAll} disabled={!matches.length} className="findbar-replace-btn">全部</button>
+          <button onClick={replace} disabled={!matches.length} className="findbar-replace-btn">{t('find.replaceOne')}</button>
+          <button onClick={replaceAll} disabled={!matches.length} className="findbar-replace-btn">{t('find.replaceAll')}</button>
         </div>
       )}
     </div>
