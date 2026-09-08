@@ -130,8 +130,38 @@
 | Node.js | ≥ 20.10 | pnpm 8 兼容 |
 | pnpm | 8.x | 包管理器 |
 | Rust | ≥ 1.75 | Tauri 2 后端 |
+| **Windows** | | |
 | WebView2 | 最新 | Windows 自带/Edge 安装 |
 | MSVC Build Tools | 最新 | Windows Rust 编译 |
+| **macOS** | | |
+| Xcode Command Line Tools | 最新 | `xcode-select --install` 提供 |
+| **Linux** | | |
+| webkit2gtk-4.1 | 系统包 | `sudo apt install libwebkit2gtk-4.1-dev` |
+| 其他系统依赖 | 见下 | librsvg2-dev / patchelf / libssl-dev 等 |
+
+#### Linux 系统依赖
+
+完整 apt 命令（Ubuntu / Debian）：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  libwebkit2gtk-4.1-dev \
+  libappindicator3-dev \
+  librsvg2-dev \
+  patchelf \
+  build-essential \
+  curl \
+  wget \
+  file \
+  libxdo-dev \
+  libssl-dev
+```
+
+其他发行版等价包名（**仅 Fedora / Arch 备注，不详尽**）：
+
+- **Fedora**：`webkit2gtk4.1-devel` `libappindicator-gtk3-devel` `librsvg2-devel` `openssl-devel` `gcc`
+- **Arch**：`webkit2gtk-4.1` `libappindicator-gtk3` `librsvg2` `patchelf` `openssl` `base-devel`
 
 ### 安装与运行
 
