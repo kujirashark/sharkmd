@@ -1,0 +1,128 @@
+.search-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+}
+
+.search-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+}
+
+.search-toggle {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 12px;
+  min-width: 32px;
+}
+
+.search-toggle[data-active="true"] {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.search-status,
+.search-empty,
+.search-hint {
+  padding: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.search-error {
+  padding: 12px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.search-results {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.search-file-group {
+  margin-bottom: 8px;
+}
+
+.search-file-header {
+  padding: 4px 8px;
+  font-weight: 600;
+  background: var(--bg-alt);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.search-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-file-count {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 8px;
+}
+
+.search-result {
+  display: flex;
+  gap: 8px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.search-result:hover {
+  background: var(--bg-hover);
+}
+
+.search-result-line {
+  color: var(--muted);
+  min-width: 32px;
+  flex-shrink: 0;
+}
+
+.search-result-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-text mark {
+  background: var(--accent);
+  color: var(--bg);
+  padding: 0 2px;
+  border-radius: 2px;
+}

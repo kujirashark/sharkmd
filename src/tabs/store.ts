@@ -9,6 +9,12 @@ export interface Tab {
   dirty: boolean;
   content: JSONContent;
   mtimeMs: number;
+  /**
+   * Optional cursor target set by SearchPanel when opening a file.
+   * The Editor consumes it once on mount: it converts the (line, col)
+   * pair to a ProseMirror position and calls setTextSelection.
+   */
+  initialJump?: { line: number; col: number };
 }
 
 interface TabsState {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, type RefObject } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ import { createAutoSave } from '../autosave/manager';
 import { useThemeStore, type ThemeName } from '../theme/store';
 import i18n from '../i18n';
 import type { Editor as TiptapEditor } from '@tiptap/core';
+import type { SearchPanelHandle } from '../sidebar/SearchPanel';
 
 export function AppLayout() {
   const { t } = useTranslation();
@@ -32,6 +33,7 @@ export function AppLayout() {
   const [findOpen, setFindOpen] = useState(false);
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   const lastSaveAtRef = useRef<Map<string, number>>(new Map());
+  const searchPanelRef: RefObject<SearchPanelHandle> = useRef<SearchPanelHandle>(null);
 
   useEffect(() => {
     tauri.getSettings().then((s) => {
@@ -49,12 +51,19 @@ export function AppLayout() {
     }).catch(() => null);
   }, [rootPath]);
 
-  // Ctrl+O shortcut
+  // Ctrl+O shortcut (open single file) + Ctrl+Shift+F (focus search panel)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O') && !e.shiftKey) {
         e.preventDefault();
         openSingleFile();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        setSidebarTab('search');
+        // Wait for React to render the SearchPanel before focusing its input.
+        window.setTimeout(() => searchPanelRef.current?.focus(), 0);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -110,7 +119,7 @@ export function AppLayout() {
     }
   }, [rootPath, t]);
 
-  const openFileByPath = useCallback(async (path: string) => {
+  const openFileByPath = useCallback(async (path: string, jumpTo?: { line: number; col: number }) => {
     try {
       const fc = await tauri.openFile(path);
       const json = parseMarkdown(fc.text);
@@ -119,6 +128,7 @@ export function AppLayout() {
         title: path.split(/[\\/]/).pop() || path,
         content: json,
         mtimeMs: fc.mtimeMs,
+        ...(jumpTo ? { initialJump: jumpTo } : {}),
       });
       await tauri.watch(path).catch(() => null);
     } catch (e) {
@@ -208,6 +218,7 @@ export function AppLayout() {
                   }
                 }}
                 onOutlineClick={handleOutlineClick}
+                searchPanelRef={searchPanelRef}
               />
             ) : (
               <>
@@ -235,6 +246,7 @@ export function AppLayout() {
                 }}
                 onEditorReady={setEditor}
                 currentFilePath={active.path}
+                initialJump={active.initialJump}
               />
             ) : (
               <div style={{ padding: 40, color: 'var(--muted)', textAlign: 'center' }}>

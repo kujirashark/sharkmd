@@ -9,6 +9,7 @@ import TableCell from '@tiptap/extension-table-cell';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import type { Editor as TiptapEditor, JSONContent } from '@tiptap/core';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MarkdownInputRules } from './extensions/markdown-input-rules';
@@ -25,11 +26,18 @@ export interface EditorProps {
   onEditorReady?: (editor: TiptapEditor) => void;
   /** Absolute path of the currently open .md file (for image paste → assets/). */
   currentFilePath?: string;
+  /**
+   * One-shot cursor target. Set by SearchPanel when opening a file from a
+   * search result. line is 1-based; col is 1-based UTF-8 char index inside
+   * the matched line (matching Rust's SearchMatch.col). After being applied
+   * once, the value is cleared so subsequent re-renders don't re-jump.
+   */
+  initialJump?: { line: number; col: number };
 }
 
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] };
 
-export function Editor({ value, onChange, onEditorReady, currentFilePath }: EditorProps) {
+export function Editor({ value, onChange, onEditorReady, currentFilePath, initialJump }: EditorProps) {
   const { t } = useTranslation();
   // Always initialize with an empty doc; sync real content via useEffect.
   const editor = useEditor({
@@ -94,6 +102,18 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath }: Edit
     if (editor && onEditorReady) onEditorReady(editor);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
+
+  // Apply one-shot initialJump (SearchPanel → openFileByPath → Tab.initialJump).
+  // Deferred to next tick so ProseMirror has finished rendering the doc
+  // before we query its positions.
+  useEffect(() => {
+    if (!editor || !initialJump) return;
+    const id = window.setTimeout(() => {
+      jumpToLineCol(editor, initialJump);
+    }, 0);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, initialJump]);
 
   // Push the current file path into the MarkdownPaste plugin's storage so
   // image-paste can decide where to save. Storage updates don't trigger a
@@ -164,4 +184,65 @@ function editorEqual(a: JSONContent | null | undefined, b: JSONContent | null | 
     if (!editorEqual(aContent[i], bContent[i])) return false;
   }
   return true;
+}
+
+/**
+ * Move caret to (line, col) where line is 1-based and col is a 1-based
+ * UTF-8 char index into the matched line text (matching Rust's
+ * SearchMatch.col). Best-effort: if line is past EOF or col is past EOL,
+ * the caret lands at the closest valid position rather than throwing.
+ *
+ * Algorithm:
+ *   1. Split doc.textContent by '\n' to compute a flat char offset for the
+ *      start of the requested line, then add col-1 for the column.
+ *   2. Walk doc.descendants to convert that char offset back to a PM pos
+ *      (offsets can't be used directly across block boundaries).
+ */
+function jumpToLineCol(editor: TiptapEditor, jump: { line: number; col: number }) {
+  const { doc } = editor.state;
+  const lines = doc.textContent.split('\n');
+  const lineIdx = Math.max(0, Math.min(jump.line - 1, lines.length - 1));
+  let charOffset = 0;
+  for (let i = 0; i < lineIdx; i++) charOffset += lines[i].length + 1; // +1 for '\n'
+  charOffset += Math.max(0, Math.min(jump.col - 1, lines[lineIdx].length));
+  const pos = charOffsetToPos(doc, charOffset);
+  if (pos == null) return;
+  editor.commands.focus();
+  editor.commands.setTextSelection({ from: pos, to: pos });
+  const node = editor.view.domAtPos(pos).node as HTMLElement | null;
+  if (node && typeof node.scrollIntoView === 'function') {
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+/**
+ * Convert a flat char offset (0-based, against doc.textContent) to a
+ * ProseMirror position by walking the tree. Returns null if the offset
+ * falls past the document end.
+ */
+function charOffsetToPos(doc: ProseMirrorNode, target: number): number | null {
+  let remaining = target;
+  let result: number | null = null;
+  doc.descendants((node, pos) => {
+    if (result != null) return false;
+    const text = node.text || '';
+    const len = text.length;
+    if (len === 0) return true;
+    if (remaining <= len) {
+      result = pos + remaining;
+      return false;
+    }
+    // Account for the implicit '\n' between block children at the doc level.
+    if (node.isBlock && remaining === len + 1) {
+      result = pos + len;
+      remaining = 0;
+      return false;
+    }
+    remaining -= len;
+    // After each block (other than the last), subtract 1 for the '\n' we
+    // added in the textContent split.
+    if (node.isBlock) remaining -= 1;
+    return true;
+  });
+  return result;
 }

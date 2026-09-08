@@ -6,6 +6,9 @@ export interface DirEntry { name: string; path: string; isDir: boolean; isMd: bo
 export interface DraftEntry { fileId: string; path: string; savedAtMs: number }
 export interface Settings { theme: string; fontSize: number; customCssPath: string | null; lastRootPath?: string | null; language?: string }
 export interface AppError { code: string; message: string; detail: string | null }
+export interface MdFileEntry { path: string; relPath: string; size: number; mtimeMs: number }
+export interface SearchMatch { file: string; relPath: string; line: number; col: number; lineText: string; matchText: string }
+export interface SearchRequest { root: string; pattern: string; useRegex: boolean; caseSensitive: boolean; maxResults?: number }
 
 export const tauri = {
   openFile: (path: string) => invoke<FileContent>('open_file', { path }),
@@ -25,4 +28,6 @@ export const tauri = {
   saveAsset: (sourceDir: string, filename: string, bytes: Uint8Array) =>
     invoke<string>('save_asset', { sourceDir, filename, bytes: Array.from(bytes) }),
   printToPdf: (path: string) => invoke<string>('print_to_pdf', { path }),
+  listMarkdownFiles: (root: string) => invoke<MdFileEntry[]>('list_markdown_files', { root }),
+  searchInFiles: (req: SearchRequest) => invoke<SearchMatch[]>('search_in_files', { req }),
 } as const;
