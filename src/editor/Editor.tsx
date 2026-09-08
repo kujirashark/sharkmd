@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 import { MarkdownInputRules } from './extensions/markdown-input-rules';
 import { MarkdownPaste } from './extensions/markdown-paste';
 import { MarkdownKeymap } from './extensions/markdown-keymap';
+import { MultiCursor } from './extensions/multi-cursor';
+import { ColumnSelection } from './extensions/column-selection';
 import { MathInline, MathDisplay } from './extensions/math-node';
 import { CodeBlockWithMermaid } from './extensions/code-block-node';
 
@@ -47,6 +49,8 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath }: Edit
       MarkdownInputRules,
       MarkdownPaste,
       MarkdownKeymap,
+      MultiCursor,
+      ColumnSelection,
     ],
     content: EMPTY_DOC,
     onUpdate: ({ editor }) => {

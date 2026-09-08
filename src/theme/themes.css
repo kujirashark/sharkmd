@@ -466,3 +466,15 @@ body { margin: 0; height: 100vh; overflow: hidden; }
 }
 .assets-hint, .assets-error-detail { color: var(--muted); font-size: 11px; margin-top: 4px; }
 .assets-error-detail { color: #d33; }
+
+/* === Editor: column-selection rectangle highlight === */
+/* Used by the ColumnSelection extension when Alt+dragging a rectangle.
+   ProseMirror renders each range as an inline span with this class;
+   the background differs from the regular selection color so users can
+   tell the two apart. */
+.column-selection {
+  background: rgba(0, 120, 215, 0.3) !important;
+}
+:root[data-theme='dark'] .column-selection {
+  background: rgba(96, 165, 250, 0.35) !important;
+}
