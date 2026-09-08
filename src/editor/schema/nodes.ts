@@ -56,6 +56,39 @@ export const nodes = {
     parseDOM: [{ tag: 'li' }],
     toDOM: () => ['li', 0] as const,
   },
+  // GFM task list
+  taskList: {
+    content: 'taskItem+',
+    group: 'block',
+    parseDOM: [{ tag: 'ul[data-type="taskList"]' }],
+    toDOM: () => ['ul', { 'data-type': 'taskList' }, 0] as const,
+  },
+  taskItem: {
+    attrs: { checked: { default: false } },
+    content: 'paragraph block*',
+    defining: true,
+    parseDOM: [{
+      tag: 'li[data-type="taskItem"]',
+      getAttrs: (el: HTMLElement) => ({ checked: el.getAttribute('data-checked') === 'true' }),
+    }],
+    toDOM: (node: any) => ['li', { 'data-type': 'taskItem', 'data-checked': String(!!node.attrs.checked) }, 0] as const,
+  },
+  // KaTeX math
+  mathInline: {
+    inline: true,
+    atom: true,
+    group: 'inline',
+    attrs: { latex: { default: '' } },
+    parseDOM: [{ tag: 'span.math-inline', getAttrs: (el: HTMLElement) => ({ latex: el.getAttribute('data-latex') ?? '' }) }],
+    toDOM: (node: any) => ['span', { class: 'math-inline', 'data-latex': node.attrs.latex }, 0] as const,
+  },
+  mathDisplay: {
+    atom: true,
+    group: 'block',
+    attrs: { latex: { default: '' } },
+    parseDOM: [{ tag: 'div.math-display', getAttrs: (el: HTMLElement) => ({ latex: el.getAttribute('data-latex') ?? '' }) }],
+    toDOM: (node: any) => ['div', { class: 'math-display', 'data-latex': node.attrs.latex }, 0] as const,
+  },
   image: {
     inline: false,
     attrs: { src: {}, alt: { default: null } },

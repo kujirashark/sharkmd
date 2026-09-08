@@ -11,6 +11,12 @@ const samples = [
   '> quote\n',
   '---',
   'text with ![img](a.png)\n',
+  // GFM task list (阶段 0)
+  '- [ ] todo\n- [x] done\n',
+  '- [x] **bold** task\n  - [ ] nested\n',
+  // KaTeX math (阶段 1)
+  'inline $E=mc^2$ math.\n',
+  '$$\n\\int_0^1 x\\,dx\n$$\n',
 ];
 
 describe('bridge roundtrip', () => {

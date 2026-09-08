@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './app/App';
 import './theme/themes.css';
+import 'katex/dist/katex.min.css';
 
 // Default to dark theme on first paint to avoid the light-flash race.
 document.documentElement.setAttribute('data-theme', 'dark');

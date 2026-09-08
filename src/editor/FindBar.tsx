@@ -13,8 +13,11 @@ export function FindBar({ editor, open, onClose }: FindBarProps) {
   const [query, setQuery] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [showReplace, setShowReplace] = useState(false);
+  const [useRegex, setUseRegex] = useState(false);
+  const [caseSensitive, setCaseSensitive] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [regexError, setRegexError] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus input when opened
@@ -25,32 +28,68 @@ export function FindBar({ editor, open, onClose }: FindBarProps) {
       setQuery('');
       setReplaceText('');
       setMatches([]);
+      setRegexError('');
     }
   }, [open]);
 
-  // Search whenever query changes
+  // Search whenever query or flags change
   useEffect(() => {
     if (!editor || !open) return;
     if (!query) {
       setMatches([]);
+      setRegexError('');
       return;
+    }
+    let matcher: (s: string) => RegExpMatchArray[] | null;
+    if (useRegex) {
+      try {
+        const flags = 'g' + (caseSensitive ? '' : 'i');
+        const re = new RegExp(query, flags);
+        matcher = (s: string) => {
+          const out: RegExpMatchArray[] = [];
+          let m: RegExpExecArray | null;
+          // Reset lastIndex for each text node
+          const local = new RegExp(re.source, re.flags);
+          while ((m = local.exec(s)) !== null) {
+            out.push(m as unknown as RegExpMatchArray);
+            if (m.index === local.lastIndex) local.lastIndex++; // avoid zero-width infinite loop
+          }
+          return out;
+        };
+        setRegexError('');
+      } catch (e) {
+        setRegexError(String((e as Error).message ?? e));
+        setMatches([]);
+        return;
+      }
+    } else {
+      const needle = caseSensitive ? query : query.toLowerCase();
+      matcher = (s: string) => {
+        const hay = caseSensitive ? s : s.toLowerCase();
+        const out: { index: number; 0: string }[] = [];
+        let idx = 0;
+        while ((idx = hay.indexOf(needle, idx)) !== -1) {
+          out.push({ index: idx, 0: needle });
+          idx += needle.length;
+        }
+        return out as unknown as RegExpMatchArray[];
+      };
     }
     const doc = editor.state.doc;
     const found: Match[] = [];
-    const lower = query.toLowerCase();
     doc.descendants((node, pos) => {
       if (!node.isText || !node.text) return;
-      const text = node.text;
-      const ltext = text.toLowerCase();
-      let idx = 0;
-      while ((idx = ltext.indexOf(lower, idx)) !== -1) {
-        found.push({ from: pos + idx, to: pos + idx + query.length });
-        idx += query.length;
+      const matches2 = matcher(node.text);
+      if (!matches2) return;
+      for (const m of matches2) {
+        const idx = (m as unknown as { index: number }).index;
+        const len = (m as unknown as { 0: string })[0]?.length ?? query.length;
+        found.push({ from: pos + idx, to: pos + idx + len });
       }
     });
     setMatches(found);
     setActiveIdx(0);
-  }, [query, editor, open]);
+  }, [query, editor, open, useRegex, caseSensitive]);
 
   // Scroll active match into view
   useEffect(() => {
@@ -100,14 +139,29 @@ export function FindBar({ editor, open, onClose }: FindBarProps) {
         <input
           ref={inputRef}
           type="text"
-          placeholder="查找"
+          placeholder={useRegex ? '正则表达式' : '查找'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="findbar-input"
+          style={regexError ? { borderColor: '#d33' } : undefined}
         />
         <span className="findbar-count">
-          {query ? (matches.length === 0 ? '无结果' : `${activeIdx + 1} / ${matches.length}`) : ''}
+          {regexError ? '⚠ ' + regexError
+            : query ? (matches.length === 0 ? '无结果' : `${activeIdx + 1} / ${matches.length}`)
+            : ''}
         </span>
+        <button
+          onClick={() => setUseRegex((v) => !v)}
+          title="正则表达式 (Alt+R)"
+          className="findbar-toggle"
+          data-active={useRegex}
+        >.*</button>
+        <button
+          onClick={() => setCaseSensitive((v) => !v)}
+          title="区分大小写 (Alt+C)"
+          className="findbar-toggle"
+          data-active={caseSensitive}
+        >Aa</button>
         <button onClick={() => setActiveIdx((i) => (i - 1 + matches.length) % Math.max(1, matches.length))} disabled={!matches.length} title="上一个 (Shift+Enter)">↑</button>
         <button onClick={() => setActiveIdx((i) => (i + 1) % matches.length)} disabled={!matches.length} title="下一个 (Enter)">↓</button>
         <button onClick={() => setShowReplace((v) => !v)} title="切换替换">{showReplace ? '⌃' : '⌄'}</button>

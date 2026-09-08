@@ -2,8 +2,24 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
+const DEMO_FILE = process.env.SHARKMD_DEMO_FILE || '';
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'sharkmd-demo-loader',
+      transformIndexHtml() {
+        if (!DEMO_FILE) return [];
+        const safe = JSON.stringify(DEMO_FILE);
+        return [{
+          tag: 'script',
+          injectTo: 'head',
+          children: `window.__SHARKMD_DEMO__ = ${safe};`,
+        }];
+      },
+    },
+  ],
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
   clearScreen: false,
   server: {

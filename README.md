@@ -69,6 +69,12 @@
 └──────────────────────────────────────────────────────────────────┘
 ```
 
+### v0.2 新能力
+
+![sharkmd v0.2 — 任务列表 + KaTeX 数学公式](./docs/screenshots/v0.2-main.png)
+
+*v0.2 一图展示：GFM 任务列表（紫色 checkbox）+ KaTeX 行内/块级公式实时渲染。下方 Mermaid 图表、Shiki 代码高亮（与 VSCode 同款）、文档导出、查找正则/Ctrl+D 多光标、图片管理面板也已实现。*
+
 ### 各 UI 元素
 
 | 区域 | 元素 | 说明 |
@@ -139,7 +145,7 @@ pnpm tauri build
 ## 🧪 测试
 
 ```bash
-pnpm test              # 跑 45 个 Vitest 单元测试
+pnpm test              # 跑 49 个 Vitest 单元测试
 pnpm test:watch        # 监听模式
 pnpm test:coverage     # 生成 coverage 报告（html/）
 pnpm test:e2e          # Playwright E2E（需 tauri-driver）
@@ -147,7 +153,7 @@ pnpm test:e2e          # Playwright E2E（需 tauri-driver）
 
 ### 测试覆盖
 
-- **编辑器桥接** —— 9 个 roundtrip + 5 个 mdast→tiptap + 4 个 tiptap→mdast = **18 个 roundtrip 黄金测试**，覆盖所有 MVP Markdown 语法
+- **编辑器桥接** —— 13 个 roundtrip + 5 个 mdast→tiptap + 4 个 tiptap→mdast = **22 个 roundtrip 黄金测试**，覆盖所有 MVP Markdown 语法 + 任务列表 + KaTeX 数学
 - **输入规则** —— 8 个测试覆盖每条 `# `、`**`、`` ` ``、`[` 等规则
 - **粘贴检测** —— 2 个测试覆盖 Markdown 粘贴检测
 - **Rust 后端** —— 6 个 cargo test 覆盖 fs/draft/settings/外部修改监听
@@ -330,13 +336,15 @@ sharkmd/
 - Tauri 2 集成（窗口、命令、事件、capabilities）
 - 完整 Markdown 编辑体验
 
-### 🔜 v0.2（短期）
-- [ ] **导出**：PDF、HTML、Word、LaTeX
-- [ ] **数学公式**：KaTeX 集成（`$...$` 和 `$$...$$`）
-- [ ] **图表**：Mermaid（` ```mermaid ` 代码块）
-- [ ] **查找替换增强**：正则、跨文件搜索
-- [ ] **多光标编辑**、列选择
-- [ ] **图片管理面板**（看 assets/ 目录、删除、重命名）
+### ✅ v0.2（已完成）
+- [x] **任务列表** GFM `- [ ]` / `- [x]` checkbox 渲染 + 勾选
+- [x] **KaTeX 数学公式** `$E=mc^2$` 实时渲染（双击进入编辑）
+- [x] **Mermaid 图表** ` ```mermaid ` 代码块自动渲染为 SVG（双击编辑源）
+- [x] **Shiki 代码语法高亮** ts/js/json/python/rust/go 等 14 种语言，与 VSCode 同款
+- [x] **文档导出** HTML / PDF（浏览器打印） / Word（.doc HTML）三格式
+- [x] **查找增强** 正则（`.*`） + 区分大小写（`Aa`） 切换
+- [x] **多光标** Ctrl+D 跳到下一匹配
+- [x] **图片管理面板** 侧栏切到"图片"tab，列出 `<fileDir>/assets/`，点击插入 `![name](./assets/...)`
 
 ### 🚀 v1.0（中期）
 - [ ] **插件系统**：用户自定义扩展
@@ -345,6 +353,8 @@ sharkmd/
 - [ ] **版本历史**：基于 Git 的本地版本
 - [ ] **i18n**：英文 UI
 - [ ] **macOS / Linux 打包与签名**
+- [ ] **跨文件搜索**（v0.2 留口子：FindBar 当前只搜当前文档）
+- [ ] **列选择**（v0.2 留口子：当前是单光标跳到下一匹配）
 
 ### 🌌 远期
 - [ ] 协同编辑（Yjs / CRDT）

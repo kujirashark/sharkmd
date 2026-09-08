@@ -182,6 +182,11 @@ export function AppLayout() {
                 onChange={setSidebarTab}
                 rootPath={rootPath}
                 headings={headings}
+                activeFilePath={active?.path ?? null}
+                onInsertAsset={(md) => {
+                  if (!editor) return;
+                  editor.chain().focus().insertContent(md).run();
+                }}
                 onOpen={openFileByPath}
                 onCreate={async (path) => {
                   try {

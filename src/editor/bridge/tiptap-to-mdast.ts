@@ -22,6 +22,9 @@ function convertInline(node: JSONContent): PhrasingContent[] {
   }
   if (node.type === 'hardBreak') return [{ type: 'break' }];
   if (node.type === 'image') return [{ type: 'image', url: node.attrs!.src as string, alt: (node.attrs!.alt as string | null) ?? null }];
+  if (node.type === 'mathInline') {
+    return [{ type: 'inlineMath', value: (node.attrs!.latex as string) ?? '' } as any];
+  }
   return [];
 }
 
@@ -36,6 +39,23 @@ function convertBlock(node: JSONContent): RootContent[] {
     case 'codeBlock': {
       const text = (node.content ?? []).map((c) => (c.type === 'text' ? c.text ?? '' : '')).join('');
       return [{ type: 'code', lang: (node.attrs!.language as string | null) ?? null, value: text } as any];
+    }
+    case 'mathDisplay': {
+      return [{ type: 'math', value: (node.attrs!.latex as string) ?? '' } as any];
+    }
+    case 'taskList': {
+      const items = (node.content ?? []).map((li) => ({
+        type: 'listItem',
+        checked: li.attrs?.checked === true,
+        spread: false,
+        children: (li.content ?? []).flatMap((c) => convertBlock(c)) as BlockContent[],
+      })) as any;
+      return [{
+        type: 'list',
+        ordered: false,
+        spread: false,
+        children: items,
+      } as any];
     }
     case 'bulletList':
     case 'orderedList': {

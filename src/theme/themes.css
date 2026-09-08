@@ -213,6 +213,8 @@ body { margin: 0; height: 100vh; overflow: hidden; }
 }
 .findbar button:disabled { color: var(--muted); cursor: not-allowed; }
 .findbar button:hover:not(:disabled) { background: var(--border); }
+.findbar-toggle { font-family: monospace; }
+.findbar-toggle[data-active="true"] { background: var(--accent); color: white; border-color: var(--accent); }
 .findbar-close { font-size: 14px; }
 .file-tree { list-style: none; margin: 0; padding: 0; }
 .file-tree li {
@@ -356,3 +358,108 @@ body { margin: 0; height: 100vh; overflow: hidden; }
   padding: 3px 10px; border-radius: 4px; color: var(--fg); cursor: pointer; font-size: 12px;
 }
 .recovery-dialog .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+
+/* GFM task list */
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none; padding-left: 0;
+}
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex; align-items: flex-start; gap: 6px;
+}
+.ProseMirror ul[data-type="taskList"] li > label {
+  margin-top: 4px; flex-shrink: 0;
+}
+.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1; min-width: 0;
+}
+.ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Math nodes */
+.math-inline {
+  display: inline-block;
+  padding: 0 2px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.math-inline:hover { background: var(--code-bg); }
+.math-display {
+  display: block;
+  text-align: center;
+  margin: 12px 0;
+  padding: 8px 0;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.math-display:hover { background: var(--code-bg); }
+.math-editing { background: var(--code-bg); }
+.math-editing textarea {
+  width: 100%; min-height: 60px; font-family: var(--mono, monospace);
+  background: var(--bg); color: var(--fg);
+  border: 1px solid var(--accent); border-radius: 4px;
+  padding: 6px 8px; font-size: 13px;
+  resize: vertical;
+}
+.math-error { color: #d33; font-style: italic; }
+
+/* Mermaid */
+.mermaid-block {
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--code-bg);
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  min-height: 60px;
+}
+.mermaid-block:hover { background: var(--border); }
+.mermaid-svg { display: inline-block; max-width: 100%; }
+.mermaid-svg svg { max-width: 100%; height: auto; }
+.mermaid-error {
+  text-align: left; color: #d33; font-family: monospace; font-size: 12px;
+  white-space: pre-wrap; background: var(--bg); padding: 8px;
+  border-radius: 4px; border: 1px solid #d33;
+}
+.mermaid-loading { text-align: left; color: var(--muted); font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+.mermaid-source { background: var(--code-bg); }
+
+/* Code block (general) */
+.code-block { background: var(--code-bg); padding: 10px 12px; border-radius: 4px; overflow-x: auto; }
+.code-block code { font-family: var(--mono, monospace); font-size: 13px; }
+
+/* Shiki: background and text colors are inline-styled by Shiki; we just
+   ensure the wrapper pre doesn't double-apply our var(--code-bg) */
+.code-block pre.shiki,
+.code-block .shiki { background: transparent !important; padding: 0 !important; margin: 0; }
+.code-block > code.shiki { display: block; }
+
+/* Assets panel */
+.assets-panel {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 8px;
+  overflow-y: auto;
+}
+.asset-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  text-align: center;
+  font-size: 11px;
+  min-height: 70px;
+  word-break: break-all;
+}
+.asset-item:hover { border-color: var(--accent); }
+.asset-thumb { font-size: 24px; }
+.asset-name { color: var(--muted); }
+.assets-empty {
+  padding: 16px; color: var(--muted); text-align: center; font-size: 12px;
+}
+.assets-hint, .assets-error-detail { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.assets-error-detail { color: #d33; }

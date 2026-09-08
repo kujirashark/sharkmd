@@ -6,11 +6,15 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 import type { Editor as TiptapEditor, JSONContent } from '@tiptap/core';
 import { useEffect, useRef } from 'react';
 import { MarkdownInputRules } from './extensions/markdown-input-rules';
 import { MarkdownPaste } from './extensions/markdown-paste';
 import { MarkdownKeymap } from './extensions/markdown-keymap';
+import { MathInline, MathDisplay } from './extensions/math-node';
+import { CodeBlockWithMermaid } from './extensions/code-block-node';
 
 export interface EditorProps {
   value: JSONContent;
@@ -24,13 +28,18 @@ export function Editor({ value, onChange, onEditorReady }: EditorProps) {
   // Always initialize with an empty doc; sync real content via useEffect.
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ codeBlock: false }),
       Link.configure({ openOnClick: false, autolink: false }),
       Image.configure({ inline: false, allowBase64: true }),
       Table.configure({ resizable: false }),
       TableRow,
       TableHeader,
       TableCell,
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      MathInline,
+      MathDisplay,
+      CodeBlockWithMermaid,
       MarkdownInputRules,
       MarkdownPaste,
       MarkdownKeymap,

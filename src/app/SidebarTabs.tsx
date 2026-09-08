@@ -1,7 +1,8 @@
 import { FileTree } from '../sidebar/FileTree';
 import { Outline, type Heading } from '../sidebar/Outline';
+import { AssetsPanel } from '../sidebar/AssetsPanel';
 
-export type SidebarTab = 'files' | 'outline';
+export type SidebarTab = 'files' | 'outline' | 'assets';
 
 export interface SidebarTabsProps {
   active: SidebarTab;
@@ -11,9 +12,14 @@ export interface SidebarTabsProps {
   onOpen: (path: string) => void;
   onCreate?: (path: string) => void;
   onOutlineClick?: (heading: Heading, index: number) => void;
+  activeFilePath: string | null;
+  onInsertAsset: (markdown: string) => void;
 }
 
-export function SidebarTabs({ active, onChange, rootPath, headings, onOpen, onCreate, onOutlineClick }: SidebarTabsProps) {
+export function SidebarTabs({
+  active, onChange, rootPath, headings, onOpen, onCreate, onOutlineClick,
+  activeFilePath, onInsertAsset,
+}: SidebarTabsProps) {
   return (
     <>
       <div className="sidebar-tabs">
@@ -29,11 +35,19 @@ export function SidebarTabs({ active, onChange, rootPath, headings, onOpen, onCr
         >
           大纲
         </button>
+        <button
+          className={`sidebar-tab ${active === 'assets' ? 'active' : ''}`}
+          onClick={() => onChange('assets')}
+        >
+          图片
+        </button>
       </div>
       {active === 'files' ? (
         <FileTree rootPath={rootPath} onOpen={onOpen} onCreate={onCreate} />
-      ) : (
+      ) : active === 'outline' ? (
         <Outline headings={headings} onItemClick={onOutlineClick} />
+      ) : (
+        <AssetsPanel filePath={activeFilePath} onInsert={onInsertAsset} />
       )}
     </>
   );

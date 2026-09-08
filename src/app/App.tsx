@@ -30,6 +30,11 @@ export function App() {
           mtimeMs: fc.mtimeMs,
         });
       };
+      // Auto-open v0.2 demo file (set by SHARKMD_DEMO_FILE env) for screenshots.
+      const demoPath = (window as any).__SHARKMD_DEMO__;
+      if (demoPath) {
+        setTimeout(() => (window as any).__sharkmd_open(demoPath), 600);
+      }
     }
   }, []);
   return (
