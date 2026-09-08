@@ -116,9 +116,15 @@ export function AppLayout() {
           📂 选择目录
         </button>
         {active && (
-          <span style={{ marginLeft: 12, color: 'var(--muted)', fontSize: 12 }} title="自动保存到磁盘和 draft 缓存">
-            {active.dirty ? '● 未保存' : '✓ 已自动保存'}
-          </span>
+          <>
+            <span style={{ marginLeft: 12, color: 'var(--muted)', fontSize: 12 }} title="自动保存到磁盘和 draft 缓存">
+              {active.dirty ? '● 未保存' : '✓ 已自动保存'}
+            </span>
+            <span style={{ marginLeft: 8, color: 'var(--muted)', fontSize: 11, fontFamily: 'monospace' }}
+                  title={`content 类型=${active.content?.type} 顶层节点=${active.content?.content?.length ?? 0}`}>
+              [dbg: content≈{JSON.stringify(active.content).length} bytes]
+            </span>
+          </>
         )}
         <span className="spacer" />
         <span style={{ color: 'var(--muted)', fontSize: 11 }}>
