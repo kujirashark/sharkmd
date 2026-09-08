@@ -21,6 +21,8 @@ pub fn run() {
             commands::draft::delete_draft,
             commands::settings::get_settings,
             commands::settings::set_settings,
+            commands::search::list_markdown_files,
+            commands::search::search_in_files,
         ])
         .setup(|_app| {
             log_setup::init();
