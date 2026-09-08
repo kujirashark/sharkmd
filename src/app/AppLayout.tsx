@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { TabsBar } from '../tabs/TabsBar';
 import { FileTree } from '../sidebar/FileTree';
 import { extractHeadings } from '../sidebar/Outline';
@@ -102,8 +103,13 @@ export function AppLayout() {
         <ThemeSwitcher />
         <button
           onClick={async () => {
-            const p = window.prompt('工作目录（粘贴完整路径）', rootPath);
-            if (p) setRootPath(p);
+            const selected = await openDialog({
+              directory: true,
+              multiple: false,
+              title: '选择工作目录',
+              defaultPath: rootPath || undefined,
+            });
+            if (typeof selected === 'string' && selected) setRootPath(selected);
           }}
           title="选择要浏览的工作目录"
         >
