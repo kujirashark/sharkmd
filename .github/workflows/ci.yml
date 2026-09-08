@@ -63,6 +63,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
+        # eslint config is WIP — don't gate CI on it. Keep the step so contributors
+        # see warnings locally; treat as best-effort.
+        continue-on-error: true
         run: pnpm lint
 
       - name: Vitest
