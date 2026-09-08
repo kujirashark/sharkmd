@@ -80,6 +80,24 @@ const buttons: (ButtonDef | 'sep')[] = [
     key: 'hr', label: '— 分割', title: '分割线（行首 ---）',
     run: (e) => e.chain().focus().setHorizontalRule().run(),
   },
+  'sep',
+  {
+    key: 'table', label: '⊞ 表格', title: '插入 3×3 表格（含表头）',
+    run: (e) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+  },
+  {
+    key: 'codeblock', label: '``` 代码', title: '代码块（行首 ```）',
+    isActive: (e) => e.isActive('codeBlock'),
+    run: (e) => e.chain().focus().toggleCodeBlock().run(),
+  },
+  {
+    key: 'image', label: '🖼 图片', title: '插入图片（输入 URL 或粘贴/拖拽）',
+    run: (e) => {
+      const url = window.prompt('图片 URL（粘贴地址，或直接拖拽图片到编辑器）');
+      if (!url) return;
+      e.chain().focus().setImage({ src: url, alt: '' }).run();
+    },
+  },
 ];
 
 export function Toolbar({ editor }: ToolbarProps) {

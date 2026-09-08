@@ -36,26 +36,28 @@ export function Editor({ value, onChange, onEditorReady }: EditorProps) {
       MarkdownKeymap,
     ],
     content: EMPTY_DOC,
-    onUpdate: ({ editor }) => onChange(editor.getJSON()),
+    onUpdate: ({ editor }) => {
+      // Record the value the editor JUST emitted so useEffect knows to
+      // skip it (otherwise we'd setContent the same doc back, which resets
+      // the cursor and discards in-progress edits like an Enter split).
+      const json = editor.getJSON();
+      lastEmittedRef.current = json;
+      onChange(json);
+    },
   });
 
-  // Track last applied content (by reference). Only call setContent when
-  // the parent value actually changes — avoids resetting the cursor on
-  // every keystroke (the parent would otherwise see the new value
-  // re-rendered with the same reference and we'd loop).
-  const lastValueRef = useRef<JSONContent | null>(null);
+  // Tracks the value the editor emitted via onUpdate. If the incoming
+  // `value` prop matches this, it's our own emission — don't setContent
+  // again, or we'd destroy the user's cursor and any in-progress split.
+  const lastEmittedRef = useRef<JSONContent | null>(null);
+  // Tracks the value we last applied via setContent (for external changes).
+  const lastAppliedRef = useRef<JSONContent | null>(null);
 
   useEffect(() => {
     if (!editor) return;
-    if (value === lastValueRef.current) return;
-    // Don't clobber edits the user just made. If the doc currently has
-    // the same shape as `value` (e.g. set by onUpdate), skip.
-    const current = editor.getJSON();
-    if (JSON.stringify(current) === JSON.stringify(value)) {
-      lastValueRef.current = value;
-      return;
-    }
-    lastValueRef.current = value;
+    if (value === lastEmittedRef.current) return; // our own update, skip
+    if (value === lastAppliedRef.current) return; // already applied
+    lastAppliedRef.current = value;
     editor.commands.setContent(value, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, editor]);

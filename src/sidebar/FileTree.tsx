@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { tauri, type DirEntry } from '../tauri/client';
 
 export interface FileTreeProps {
@@ -7,116 +7,102 @@ export interface FileTreeProps {
   onOpen: (path: string) => void;
 }
 
+/**
+ * Recursive tree view of .md files. Directories can be expanded/collapsed.
+ * Each directory is lazy-loaded: contents are fetched only when first expanded.
+ */
 export function FileTree({ rootPath, onOpen }: FileTreeProps) {
-  // currentPath: where the user is currently browsing inside the tree.
-  // Always starts at rootPath; can navigate into subdirectories.
-  const [currentPath, setCurrentPath] = useState<string>('');
-  const [entries, setEntries] = useState<DirEntry[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  // When rootPath changes (user picks a new working dir), reset to root.
-  useEffect(() => {
-    setCurrentPath(rootPath);
-  }, [rootPath]);
-
-  useEffect(() => {
-    if (!currentPath) return;
-    tauri.readDir(currentPath)
-      .then((items) => { setEntries(items); setError(null); })
-      .catch((e) => setError(String(e)));
-  }, [currentPath, refreshKey]);
-
-  // Filter: show directories + .md files only, hide dotfiles.
-  const visible = entries.filter((e) => {
-    if (e.name.startsWith('.')) return false;
-    return e.isDir || e.isMd;
-  });
-
-  const goUp = () => {
-    if (!currentPath || currentPath === rootPath) return;
-    const parent = currentPath.replace(/[\\/][^\\/]+$/, '');
-    setCurrentPath(parent || rootPath);
-  };
-
-  // Path breadcrumb relative to rootPath
-  const crumbs = currentPath
-    ? currentPath.split(/[\\/]/).filter(Boolean)
-    : [];
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   return (
     <>
       <div className="sidebar-header">
         <span style={{ flex: 1 }}>文件</span>
-        {currentPath !== rootPath && (
-          <button
-            className="back-btn"
-            onClick={goUp}
-            title="返回上级目录"
-            style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: '0 4px' }}
-          >
-            ← 上级
-          </button>
-        )}
         <button
-          className="refresh-btn"
-          onClick={() => setRefreshKey((k) => k + 1)}
+          onClick={refresh}
           title="刷新"
           style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: '0 4px' }}
         >
           ↻
         </button>
       </div>
-      <div className="breadcrumb" title={currentPath}>
-        {crumbs.map((seg, i, arr) => {
-          // Reconstruct absolute path: walk from rootPath forward
-          const absPath = (() => {
-            let p = rootPath;
-            for (let j = 1; j <= i; j++) p = p + '/' + arr[j];
-            return p;
-          })();
-          return (
-            <span key={i}>
-              <a
-                onClick={() => setCurrentPath(absPath)}
-                style={{ cursor: 'pointer', color: 'var(--accent)' }}
-              >
-                {seg}
-              </a>
-              {i < arr.length - 1 && <span style={{ color: 'var(--muted)' }}> / </span>}
-            </span>
-          );
-        })}
-      </div>
-      {error ? (
-        <div className="error">{error}</div>
-      ) : visible.length === 0 ? (
-        <div className="empty">无 .md 文件</div>
-      ) : (
-        <ul className="file-tree" role="tree">
-          {visible.map((e) => (
-            <li key={e.path} className={e.isDir ? 'dir' : 'file'}>
-              <span
-                className="icon"
-                onClick={() => {
-                  if (e.isDir) setCurrentPath(e.path);
-                  else if (e.isMd) onOpen(e.path);
-                }}
-              >
-                {e.isDir ? '📁' : '📄'}
-              </span>
-              <span
-                onClick={() => {
-                  if (e.isDir) setCurrentPath(e.path);
-                  else if (e.isMd) onOpen(e.path);
-                }}
-                title={e.path}
-              >
-                {e.name}
-              </span>
+      <ul className="file-tree" role="tree" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        <TreeNode path={rootPath} name={rootPath.split(/[\\/]/).pop() || rootPath} depth={0} onOpen={onOpen} refreshKey={refreshKey} />
+      </ul>
+    </>
+  );
+}
+
+interface TreeNodeProps {
+  path: string;
+  name: string;
+  depth: number;
+  onOpen: (path: string) => void;
+  refreshKey: number;
+}
+
+function TreeNode({ path, name, depth, onOpen, refreshKey }: TreeNodeProps) {
+  const [entries, setEntries] = useState<DirEntry[] | null>(null);
+  const [expanded, setExpanded] = useState(depth < 1); // root auto-expanded
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!expanded) return;
+    let cancelled = false;
+    tauri.readDir(path)
+      .then((items) => { if (!cancelled) { setEntries(items); setError(null); } })
+      .catch((e) => { if (!cancelled) setError(String(e)); });
+    return () => { cancelled = true; };
+  }, [path, expanded, refreshKey]);
+
+  const visible = (entries ?? []).filter((e) => {
+    if (e.name.startsWith('.')) return false;
+    return e.isDir || e.isMd;
+  });
+  const dirs = visible.filter((e) => e.isDir);
+  const files = visible.filter((e) => e.isMd);
+
+  const paddingLeft = 8 + depth * 14;
+
+  return (
+    <>
+      <li
+        className="dir"
+        style={{ padding: '3px 0', paddingLeft, cursor: 'pointer', userSelect: 'none' }}
+        onClick={() => setExpanded(!expanded)}
+        title={path}
+      >
+        <span className="icon" style={{ display: 'inline-block', width: 14, color: 'var(--muted)' }}>
+          {expanded ? '▼' : '▶'}
+        </span>
+        <span style={{ color: 'var(--accent)' }}>📁 {name}</span>
+      </li>
+      {expanded && (
+        <>
+          {error && <li style={{ paddingLeft: paddingLeft + 14, color: '#ef4444', fontSize: 12 }}>⚠ {error}</li>}
+          {entries === null && !error && (
+            <li style={{ paddingLeft: paddingLeft + 14, color: 'var(--muted)', fontSize: 12 }}>加载中…</li>
+          )}
+          {dirs.map((d) => (
+            <TreeNode key={d.path} path={d.path} name={d.name} depth={depth + 1} onOpen={onOpen} refreshKey={refreshKey} />
+          ))}
+          {files.map((f) => (
+            <li
+              key={f.path}
+              className="file"
+              style={{ padding: '3px 0', paddingLeft: paddingLeft + 14, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              onClick={() => onOpen(f.path)}
+              title={f.path}
+            >
+              <span style={{ marginRight: 6, opacity: 0.7 }}>📄</span>
+              {f.name}
             </li>
           ))}
-        </ul>
+          {entries !== null && !error && dirs.length === 0 && files.length === 0 && (
+            <li style={{ paddingLeft: paddingLeft + 14, color: 'var(--muted)', fontSize: 12 }}>空目录</li>
+          )}
+        </>
       )}
     </>
   );
