@@ -1,4 +1,4 @@
-# easymd
+# sharkmd
 
 Markdown editor powered by Tauri + React + Vite.
 

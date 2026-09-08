@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const fixtureDir = join(tmpdir(), 'easymd-e2e');
+const fixtureDir = join(tmpdir(), 'sharkmd-e2e');
 mkdirSync(fixtureDir, { recursive: true });
 const mdPath = join(fixtureDir, 'hello.md');
 writeFileSync(mdPath, '# Hello\n\nWorld **bold**.\n');
@@ -18,7 +18,7 @@ test('user opens .md file, types, sees inline formatting', async ({ page }) => {
   // exposed only in dev mode to inject the file directly.
   await page.evaluate(async (p) => {
     // @ts-ignore hook exposed in dev only
-    await window.__easymd_open?.(p);
+    await window.__sharkmd_open?.(p);
   }, mdPath);
   await expect(page.locator('h1')).toContainText('Hello');
   // Type "## Test" to verify the markdown input rule promotes it to H2.

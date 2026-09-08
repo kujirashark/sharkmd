@@ -228,7 +228,7 @@ export function AppLayout() {
               />
             ) : (
               <div style={{ padding: 40, color: 'var(--muted)', textAlign: 'center' }}>
-                <p style={{ fontSize: 18, marginBottom: 8 }}>easymd</p>
+                <p style={{ fontSize: 18, marginBottom: 8 }}>sharkmd</p>
                 <p>用 菜单 → 文件 → 打开文件… 或 Ctrl+O 打开一个 .md</p>
                 <p style={{ marginTop: 16, fontSize: 12 }}>或 菜单 → 文件 → 选择工作目录  浏览文件夹</p>
               </div>

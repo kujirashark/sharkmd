@@ -1,12 +1,12 @@
 [package]
-name = "easymd"
+name = "sharkmd"
 version = "0.1.0"
 description = "Markdown editor"
 edition = "2021"
 rust-version = "1.75"
 
 [lib]
-name = "easymd_lib"
+name = "sharkmd_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

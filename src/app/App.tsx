@@ -20,7 +20,7 @@ export function App() {
   // without going through window.prompt or a real OS file picker.
   useEffect(() => {
     if (import.meta.env.DEV) {
-      (window as any).__easymd_open = async (path: string) => {
+      (window as any).__sharkmd_open = async (path: string) => {
         const fc = await tauri.openFile(path);
         const json = parseMarkdown(fc.text);
         useTabsStore.getState().addTab({

@@ -156,7 +156,7 @@ export function MenuBar({
     {
       label: '帮助',
       items: [
-        { label: '关于 easymd', run: () => window.alert('easymd — 产品级 Markdown 编辑器\nMVP for Windows\n\nTauri 2 + React + TipTap') },
+        { label: '关于 sharkmd', run: () => window.alert('sharkmd — 产品级 Markdown 编辑器\nMVP for Windows\n\nTauri 2 + React + TipTap') },
         { label: 'Markdown 快捷键', run: () => window.alert(
           '# 空格     = H1\n## 空格    = H2\n### 空格   = H3\n**文字**   = 加粗\n*文字*     = 斜体\n~~文字~~   = 删除线\n`代码`     = 行内代码\n```代码``` = 代码块\n- 空格     = 无序列表\n1. 空格    = 有序列表\n> 空格     = 引用\n--- 空格   = 分割线\n[T](URL)  = 链接'
         ) },
