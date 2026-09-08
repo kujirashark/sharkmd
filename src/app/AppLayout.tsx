@@ -21,6 +21,7 @@ export function AppLayout() {
   const updateContent = useTabsStore((s) => s.updateContent);
   const [rootPath, setRootPath] = useState<string>('');
   const [editor, setEditor] = useState<TiptapEditor | null>(null);
+  const [fileTreeKey, setFileTreeKey] = useState(0);
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   // Path → wall-clock timestamp of our last successful save. Used to
   // suppress the watcher event fired by our own atomic write so the user
@@ -182,6 +183,7 @@ export function AppLayout() {
         <aside className="sidebar">
           {rootPath ? (
             <FileTree
+              key={fileTreeKey /* bump after create/refresh to re-fetch */}
               rootPath={rootPath}
               onOpen={async (path) => {
                 try {
@@ -196,6 +198,25 @@ export function AppLayout() {
                   await tauri.watch(path).catch(() => null);
                 } catch (e) {
                   window.alert(`无法打开文件: ${e}`);
+                }
+              }}
+              onCreate={async (path) => {
+                try {
+                  // Create empty file via save_file (atomic write creates if missing)
+                  const res = await tauri.saveFile(path, '');
+                  addTab({
+                    path,
+                    title: path.split(/[\\/]/).pop() || path,
+                    content: { type: 'doc', content: [{ type: 'paragraph' }] },
+                    mtimeMs: res.mtimeMs,
+                  });
+                  await tauri.watch(path).catch(() => null);
+                  // Refresh tree by toggling rootPath briefly (cheap)
+                  setRootPath((p) => p + ' '); // no-op change to trigger refresh... but better:
+                  // Force FileTree to re-fetch by remounting via key
+                  setFileTreeKey((k) => k + 1);
+                } catch (e) {
+                  window.alert(`无法创建文件: ${e}`);
                 }
               }}
             />

@@ -5,20 +5,43 @@ export interface FileTreeProps {
   /** The root working directory (immutable, set from settings/dialog). */
   rootPath: string;
   onOpen: (path: string) => void;
+  /** Create a new .md file at the root. Receives the absolute path. */
+  onCreate?: (path: string) => void;
 }
 
 /**
  * Recursive tree view of .md files. Directories can be expanded/collapsed.
  * Each directory is lazy-loaded: contents are fetched only when first expanded.
  */
-export function FileTree({ rootPath, onOpen }: FileTreeProps) {
+export function FileTree({ rootPath, onOpen, onCreate }: FileTreeProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  const handleNew = () => {
+    if (!onCreate) return;
+    const name = window.prompt('新文件名称（不含扩展名）', 'untitled');
+    if (!name) return;
+    const safe = name.replace(/[\\/:*?"<>|]/g, '_').trim();
+    if (!safe) return;
+    const filename = safe.endsWith('.md') ? safe : safe + '.md';
+    const sep = rootPath.includes('\\') ? '\\' : '/';
+    const full = rootPath.replace(/[\\/]+$/, '') + sep + filename;
+    onCreate(full);
+  };
 
   return (
     <>
       <div className="sidebar-header">
         <span style={{ flex: 1 }}>文件</span>
+        {onCreate && (
+          <button
+            onClick={handleNew}
+            title="新建 Markdown 文件"
+            style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: '0 4px', fontSize: 14 }}
+          >
+            + 新建
+          </button>
+        )}
         <button
           onClick={refresh}
           title="刷新"
