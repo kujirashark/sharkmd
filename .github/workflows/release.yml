@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,17 +18,20 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  release:
-    name: release (${{ matrix.platform }})
+  build:
+    name: build (${{ matrix.platform }})
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: macos-latest
+            target: universal-apple-darwin
             args: '--target universal-apple-darwin'
           - platform: ubuntu-22.04
+            target: ''
             args: ''
           - platform: windows-latest
+            target: ''
             args: ''
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 120
@@ -73,19 +77,49 @@ jobs:
         run: pnpm test
 
       - name: Run cargo tests
-        # fs_test requires Windows WebView2 DLL at runtime — skip on non-Windows
-        # so the macOS/Linux release builds still produce artifacts.
+        # fs_test requires Windows WebView2 DLL at runtime — best-effort cross-platform.
         continue-on-error: true
         run: cargo test --manifest-path src-tauri/Cargo.toml --all-features
 
-      - name: Build & release
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Tauri (release)
+        run: pnpm exec tauri build ${{ matrix.args }}
+
+      - name: Upload bundle as artifact
+        uses: actions/upload-artifact@v4
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'sharkmd ${{ github.ref_name }}'
-          releaseBody: 'See [CHANGELOG.md](./CHANGELOG.md) for full release notes.'
-          releaseDraft: true
+          name: sharkmd-${{ matrix.platform }}
+          path: |
+            src-tauri/target/**/bundle/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Create / update draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: sharkmd ${{ github.ref_name }}
+          body: |
+            See [CHANGELOG.md](./CHANGELOG.md) for full release notes.
+
+            ## Downloads
+            Choose your platform:
+            - **Windows**: `.msi` / `.exe`
+            - **macOS**: `.dmg` (universal: Apple Silicon + Intel)
+            - **Linux**: `.AppImage` / `.deb`
+
+            ## Verification
+            sharkmd v0.3.0 ships **unsigned** for all platforms. On first launch:
+            - **macOS**: Right-click → Open → confirm bypass of Gatekeeper
+            - **Windows**: "More info" → "Run anyway" to dismiss SmartScreen
+            - **Linux**: AppImage `chmod +x sharkmd_*.AppImage && ./sharkmd_*.AppImage`
+          draft: true
           prerelease: false
-          args: ${{ matrix.args }}
+          # softprops@v2 reads artifacts uploaded via actions/upload-artifact and
+          # attaches matching files. Glob filters the right files per platform.
+          files: |
+            src-tauri/target/**/bundle/**/*.msi
+            src-tauri/target/**/bundle/**/*.exe
+            src-tauri/target/**/bundle/**/*.dmg
+            src-tauri/target/**/bundle/**/*.AppImage
+            src-tauri/target/**/bundle/**/*.deb
+          fail_on_unmatched_files: false
