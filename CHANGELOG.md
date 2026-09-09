@@ -2,6 +2,28 @@
 
 所有 sharkmd 的版本变更记录。格式遵循 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [0.4.0] - 2026-XX-XX
+
+拼写检查 + 自动更新检查。sharkmd 现在支持英文拼写错误实时下划线 + 错误侧栏一键替换，并能在应用内一键检查最新版本。
+
+### 新增功能
+
+- **拼写检查（英文）** —— nspell + dictionary-en 引擎，错词红色波浪下划线 + 侧栏错误列表 + 一键替换建议。`View → Spell Check` 切换。默认关闭（用户开启后才会扫描）。
+- **自动更新检查** —— `Help → Check for Updates...` 调用 GitHub Releases API，显示最新版本号 + release notes + 发布时间；点击"Open Release Page"跳转到 GitHub release 页手动下载。**未集成 in-app 自动更新**（v0.4 不签 TAURI 签名密钥）。
+
+### 改进
+
+- 中文支持规划（v0.4 留 placeholder，v0.5 接真实 zh-CN hunspell 包）
+- Settings schema 增 spellcheck 字段，老 settings.json 通过 `#[serde(default)]` 自动用默认值
+
+### 下载
+
+- Windows: `.msi` / `.exe`
+- macOS: `.dmg` (universal)
+- Linux: `.AppImage` / `.deb`
+
+---
+
 ## [0.3.0] - 2026-XX-XX
 
 首个**多平台公开发行版**。sharkmd 现在可在 Windows / macOS / Linux 三平台下载安装。
