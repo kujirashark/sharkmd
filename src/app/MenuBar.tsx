@@ -10,6 +10,7 @@ import { useTabsStore } from '../tabs/store';
 import { exportToHTML, exportToPDF } from '../export/export-html';
 import { exportToDocx, blobToUint8Array } from '../export/export-docx';
 import i18n from '../i18n';
+import { PromptModal } from '../components/PromptModal';
 
 export interface MenuBarProps {
   editor: Editor | null;
@@ -54,10 +55,34 @@ export function MenuBar({
 }: MenuBarProps) {
   const { t } = useTranslation();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  // Inline React modal state — `window.prompt` is unreliable in Tauri
+  // WebView2 (silently swallowed on some platform builds), so we
+  // replace every prompt-style flow with a real Modal+input pair.
+  const [pendingNewFileName, setPendingNewFileName] = useState<string | null>(null);
+  const [pendingLinkUrl, setPendingLinkUrl] = useState(false);
+  const [pendingImageUrl, setPendingImageUrl] = useState(false);
   const setTheme = useThemeStore((s) => s.setTheme);
   const themeName = useThemeStore((s) => s.theme);
   const closeTab = useTabsStore((s) => s.closeTab);
   const tabs = useTabsStore((s) => s.tabs);
+
+  // Submit handler for the "New File" modal. Resolves the target path
+  // (current tab's directory, or filename-only if no rootPath), writes
+  // an empty file via Rust, then opens it as a tab.
+  const createNewFile = (name: string) => {
+    setPendingNewFileName(null);
+    const safe = name.replace(/[\\/:*?"<>|]/g, '_').trim();
+    if (!safe) return;
+    const filename = safe.endsWith('.md') ? safe : safe + '.md';
+    const current = tabs.find((t) => t.id === activeId);
+    const baseDir = current ? current.path.replace(/[\\/][^\\/]+$/, '') : '';
+    const full = baseDir ? baseDir + '\\' + filename : filename;
+    tauri.saveFile(full, '').then(() => {
+      onOpenFile(full);
+    }).catch((e) => {
+      window.alert(t('message.cannotCreate', { error: String(e) }));
+    });
+  };
 
   const run = (fn?: () => void) => {
     setOpenMenu(null);
@@ -87,17 +112,7 @@ export function MenuBar({
       items: [
         { id: 'file-new', label: t('menu.file.new'), shortcut: 'Ctrl+N', run: () => {
           if (!editor) return;
-          const name = window.prompt(t('dialog.newFile'), 'untitled');
-          if (!name) return;
-          const safe = name.replace(/[\\/:*?"<>|]/g, '_').trim();
-          const filename = safe.endsWith('.md') ? safe : safe + '.md';
-          // Create in current file's directory or rootPath fallback
-          const current = tabs.find((t) => t.id === activeId);
-          const baseDir = current ? current.path.replace(/[\\/][^\\/]+$/, '') : '';
-          const full = baseDir ? baseDir + '\\' + filename : filename;
-          tauri.saveFile(full, '').then(() => {
-            onOpenFile(full);
-          }).catch((e) => window.alert(t('message.cannotCreate', { error: String(e) })));
+          setPendingNewFileName('untitled.md');
         } },
         { id: 'file-choose-dir', label: t('menu.file.chooseDir'), run: onChooseDir },
         { id: 'file-open', label: t('menu.file.openFile'), shortcut: 'Ctrl+O', run: async () => {
@@ -219,15 +234,11 @@ export function MenuBar({
         { id: 'format-sep-1', separator: true, label: '' },
         { id: 'format-link', label: t('menu.format.link'), shortcut: 'Ctrl+K', disabled: !editor, run: () => {
           if (!editor) return;
-          const href = window.prompt(t('dialog.linkUrl'));
-          if (!href) return;
-          editor.chain().focus().toggleLink({ href }).run();
+          setPendingLinkUrl(true);
         } },
         { id: 'format-image', label: t('menu.format.image'), disabled: !editor, run: () => {
           if (!editor) return;
-          const url = window.prompt(t('dialog.imageUrl'));
-          if (!url) return;
-          editor.chain().focus().setImage({ src: url, alt: '' }).run();
+          setPendingImageUrl(true);
         } },
         { id: 'format-table', label: t('menu.format.table'), disabled: !editor, run: () => {
           if (!editor) return;
@@ -311,6 +322,49 @@ export function MenuBar({
           onClick={() => setOpenMenu(null)}
         />
       )}
+
+      {/* Inline modal replacements for window.prompt / window.confirm. */}
+      <PromptModal
+        open={pendingNewFileName !== null}
+        title={t('dialog.newFile')}
+        defaultValue={pendingNewFileName ?? 'untitled.md'}
+        placeholder="untitled.md"
+        okLabel={t('dialog.create')}
+        cancelLabel={t('dialog.cancel')}
+        validate={(v) =>
+          /[\\/:*?"<>|]/.test(v) ? t('dialog.filenameInvalid') : null
+        }
+        onConfirm={createNewFile}
+        onCancel={() => setPendingNewFileName(null)}
+      />
+      <PromptModal
+        open={pendingLinkUrl}
+        title={t('dialog.linkUrl')}
+        message={t('dialog.linkUrlHint')}
+        defaultValue="https://"
+        placeholder="https://example.com"
+        okLabel={t('dialog.insert')}
+        cancelLabel={t('dialog.cancel')}
+        onConfirm={(href) => {
+          setPendingLinkUrl(false);
+          editor?.chain().focus().toggleLink({ href }).run();
+        }}
+        onCancel={() => setPendingLinkUrl(false)}
+      />
+      <PromptModal
+        open={pendingImageUrl}
+        title={t('dialog.imageUrl')}
+        message={t('dialog.imageUrlHint')}
+        defaultValue="https://"
+        placeholder="https://example.com/image.png"
+        okLabel={t('dialog.insert')}
+        cancelLabel={t('dialog.cancel')}
+        onConfirm={(url) => {
+          setPendingImageUrl(false);
+          editor?.chain().focus().setImage({ src: url, alt: '' }).run();
+        }}
+        onCancel={() => setPendingImageUrl(false)}
+      />
     </div>
   );
 }
