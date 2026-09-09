@@ -63,6 +63,7 @@ describe('<PromptModal>', () => {
         title="New file"
         okLabel="Create"
         cancelLabel="Cancel"
+        emptyError="Filename cannot be empty"
         onConfirm={onConfirm}
         onCancel={() => {}}
       />,
@@ -71,7 +72,7 @@ describe('<PromptModal>', () => {
     fireEvent.change(input, { target: { value: '   ' } });
     fireEvent.click(screen.getByTestId('prompt-ok'));
     expect(onConfirm).not.toHaveBeenCalled();
-    expect(screen.getByText(/不能为空/)).toBeTruthy();
+    expect(screen.getByTestId('prompt-error').textContent).toBe('Filename cannot be empty');
   });
 
   it('shows custom validation error and blocks submit', () => {
@@ -109,5 +110,64 @@ describe('<PromptModal>', () => {
     fireEvent.change(screen.getByTestId('prompt-input'), { target: { value: 'new.md' } });
     fireEvent.click(screen.getByTestId('prompt-ok'));
     expect(onConfirm).toHaveBeenCalledWith('new.md');
+  });
+
+  it('autofocuses the input on open', async () => {
+    render(
+      <PromptModal
+        open
+        title="New file"
+        defaultValue="untitled.md"
+        okLabel="Create"
+        cancelLabel="Cancel"
+        onConfirm={() => {}}
+        onCancel={() => {}}
+      />,
+    );
+    // setTimeout 0 in useEffect — flush microtasks.
+    await new Promise((r) => setTimeout(r, 10));
+    const input = screen.getByTestId('prompt-input');
+    // jsdom doesn't simulate `input.select()` reliably (selectionStart/End
+    // remain null), so we only verify focus here.
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('shows error with red border + danger role when validate fails', () => {
+    render(
+      <PromptModal
+        open
+        title="New file"
+        okLabel="Create"
+        cancelLabel="Cancel"
+        validate={(v) => (v.includes(' ') ? 'no spaces' : null)}
+        onConfirm={() => {}}
+        onCancel={() => {}}
+      />,
+    );
+    fireEvent.change(screen.getByTestId('prompt-input'), { target: { value: 'a b' } });
+    fireEvent.click(screen.getByTestId('prompt-ok'));
+    const input = screen.getByTestId('prompt-input') as HTMLInputElement;
+    expect(input.className).toContain('has-error');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    const errEl = screen.getByTestId('prompt-error');
+    expect(errEl.textContent).toBe('no spaces');
+    expect(errEl.getAttribute('role')).toBe('alert');
+  });
+
+  it('uses caller-provided emptyError message', () => {
+    render(
+      <PromptModal
+        open
+        title="New file"
+        okLabel="Create"
+        cancelLabel="Cancel"
+        emptyError="Filename cannot be empty"
+        onConfirm={() => {}}
+        onCancel={() => {}}
+      />,
+    );
+    fireEvent.change(screen.getByTestId('prompt-input'), { target: { value: '   ' } });
+    fireEvent.click(screen.getByTestId('prompt-ok'));
+    expect(screen.getByTestId('prompt-error').textContent).toBe('Filename cannot be empty');
   });
 });

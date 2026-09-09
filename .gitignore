@@ -10,4 +10,6 @@ playwright-report/
 test-results/
 .DS_Store
 .claude/
-.dev.*
+.dev.*src-tauri/untitled.md
+
+src-tauri/untitled.md

@@ -86,6 +86,9 @@ const enUS = {
     exportPdf: 'Export as PDF',
     exportDocx: 'Export as Word (.docx)',
   },
+  validation: {
+    empty: 'Value cannot be empty',
+  },
   message: {
     cannotCreate: 'Cannot create: {{error}}',
     cannotCreateFile: 'Cannot create file: {{error}}',

@@ -1,0 +1,107 @@
+.prompt-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 22px 22px;
+}
+
+.prompt-modal-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted, #6b7280);
+  line-height: 1.5;
+}
+
+.prompt-modal-input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--fg, #1f2328);
+  background: var(--input-bg, #ffffff);
+  border: 1px solid var(--border, #d0d7de);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  box-sizing: border-box;
+}
+
+.prompt-modal-input:focus {
+  border-color: var(--accent, #0969da);
+  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.18);
+}
+
+.prompt-modal-input.has-error {
+  border-color: var(--danger, #d1242f);
+}
+.prompt-modal-input.has-error:focus {
+  box-shadow: 0 0 0 3px rgba(209, 36, 47, 0.18);
+}
+
+.prompt-modal-error {
+  margin: -4px 0 0;
+  font-size: 12.5px;
+  color: var(--danger, #d1242f);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prompt-modal-error::before {
+  content: '⚠';
+  font-size: 13px;
+}
+
+/* Footer with OK / Cancel buttons — primary gets the accent colour so
+ * the user can see at a glance which is the "commit" action. */
+.prompt-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border-soft, #eaeef2);
+  padding-top: 14px;
+}
+
+.prompt-modal-actions button {
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border, #d0d7de);
+  background: var(--panel-bg, #ffffff);
+  color: var(--fg, #1f2328);
+  transition: background 120ms ease, border-color 120ms ease;
+  font-weight: 500;
+}
+
+.prompt-modal-actions button:hover {
+  background: var(--bg-hover, #f6f8fa);
+}
+
+.prompt-modal-actions .prompt-modal-ok {
+  background: var(--accent, #0969da);
+  border-color: var(--accent, #0969da);
+  color: #ffffff;
+}
+
+.prompt-modal-actions .prompt-modal-ok:hover {
+  background: var(--accent-hover, #0860c8);
+  border-color: var(--accent-hover, #0860c8);
+}
+
+@media (prefers-color-scheme: dark) {
+  .prompt-modal-input {
+    background: var(--input-bg, #0d1117);
+    border-color: var(--border, #30363d);
+  }
+  .prompt-modal-actions button {
+    background: var(--panel-bg, #161b22);
+    border-color: var(--border, #30363d);
+  }
+  .prompt-modal-actions button:hover {
+    background: var(--bg-hover, #21262d);
+  }
+}

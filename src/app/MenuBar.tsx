@@ -335,6 +335,7 @@ export function MenuBar({
         placeholder="untitled.md"
         okLabel={t('dialog.create')}
         cancelLabel={t('dialog.cancel')}
+        emptyError={t('validation.empty')}
         validate={(v) =>
           /[\\/:*?"<>|]/.test(v) ? t('dialog.filenameInvalid') : null
         }
@@ -349,6 +350,7 @@ export function MenuBar({
         placeholder="https://example.com"
         okLabel={t('dialog.insert')}
         cancelLabel={t('dialog.cancel')}
+        emptyError={t('validation.empty')}
         onConfirm={(href) => {
           setPendingLinkUrl(false);
           editor?.chain().focus().toggleLink({ href }).run();
@@ -363,6 +365,7 @@ export function MenuBar({
         placeholder="https://example.com/image.png"
         okLabel={t('dialog.insert')}
         cancelLabel={t('dialog.cancel')}
+        emptyError={t('validation.empty')}
         onConfirm={(url) => {
           setPendingImageUrl(false);
           editor?.chain().focus().setImage({ src: url, alt: '' }).run();

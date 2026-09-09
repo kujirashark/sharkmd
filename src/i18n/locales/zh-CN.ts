@@ -94,6 +94,9 @@ const zhCN = {
     exportPdf: '导出为 PDF',
     exportDocx: '导出为 Word (.docx)',
   },
+  validation: {
+    empty: '内容不能为空',
+  },
   message: {
     cannotCreate: '无法创建: {{error}}',
     cannotCreateFile: '无法创建文件: {{error}}',
