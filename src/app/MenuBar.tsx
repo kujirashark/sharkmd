@@ -26,6 +26,8 @@ export interface MenuBarProps {
   // for sidebar / outline / theme entries.
   spellcheckEnabled: boolean;
   onToggleSpell: () => void;
+  // Open the UpdaterPanel dialog (Help → Check for Updates…).
+  onCheckUpdate: () => void;
 }
 
 interface MenuItem {
@@ -48,7 +50,7 @@ interface MenuDef {
 export function MenuBar({
   editor, onChooseDir, onOpenFile, activeId,
   showSidebar, showOutline, onToggleSidebar, onToggleOutline, onOpenFind,
-  spellcheckEnabled, onToggleSpell,
+  spellcheckEnabled, onToggleSpell, onCheckUpdate,
 }: MenuBarProps) {
   const { t } = useTranslation();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -265,6 +267,8 @@ export function MenuBar({
       id: 'help',
       label: t('menu.help.label'),
       items: [
+        { id: 'help-check-update', label: t('menu.help.checkUpdate'), run: () => onCheckUpdate() },
+        { id: 'help-sep', separator: true, label: '' },
         { id: 'help-about', label: t('menu.help.about'), run: () => window.alert(t('menu.aboutBody')) },
         { id: 'help-shortcuts', label: t('menu.help.shortcuts'), run: () => window.alert(t('menu.shortcutsBody')) },
       ],

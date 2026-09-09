@@ -63,6 +63,7 @@ const enUS = {
       label: 'Help',
       about: 'About sharkmd',
       shortcuts: 'Markdown Shortcuts',
+      checkUpdate: 'Check for Updates…',
     },
     aboutBody: 'sharkmd — A product-grade Markdown editor\nMVP for Windows\n\nTauri 2 + React + TipTap',
     shortcutsBody: '# space     = H1\n## space    = H2\n### space   = H3\n**text**    = Bold\n*text*      = Italic\n~~text~~    = Strikethrough\n`code`      = Inline code\n```code```  = Code block\n- space     = Bullet list\n1. space    = Numbered list\n> space     = Quote\n--- space   = Horizontal rule\n[T](URL)    = Link',
@@ -205,6 +206,22 @@ const enUS = {
     suggestions: 'Suggest',
     jump: 'Jump to misspelled word',
     noSuggestions: 'No suggestions',
+  },
+  update: {
+    title: 'Check for Updates',
+    currentVersion: 'Current version: v{{version}}',
+    latestVersion: 'Latest version: {{version}}',
+    publishedAt: 'Published: {{date}}',
+    openRelease: 'Open Release Page',
+    upToDate: 'You are on the latest version',
+    checking: 'Checking...',
+    releaseNotes: 'Release Notes',
+    close: 'Close',
+    error: {
+      title: 'Failed to check for updates',
+      apiError: 'Failed to fetch release info (HTTP {{status}})',
+      networkError: 'Network error — check your connection',
+    },
   },
 };
 

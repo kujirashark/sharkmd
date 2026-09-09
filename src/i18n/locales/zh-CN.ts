@@ -71,6 +71,7 @@ const zhCN = {
       label: '帮助',
       about: '关于 sharkmd',
       shortcuts: 'Markdown 快捷键',
+      checkUpdate: '检查更新…',
     },
     aboutBody: 'sharkmd — 产品级 Markdown 编辑器\nMVP for Windows\n\nTauri 2 + React + TipTap',
     shortcutsBody: '# 空格     = H1\n## 空格    = H2\n### 空格   = H3\n**文字**   = 加粗\n*文字*     = 斜体\n~~文字~~   = 删除线\n`代码`     = 行内代码\n```代码``` = 代码块\n- 空格     = 无序列表\n1. 空格    = 有序列表\n> 空格     = 引用\n--- 空格   = 分割线\n[T](URL)  = 链接',
@@ -213,6 +214,22 @@ const zhCN = {
     suggestions: '建议',
     jump: '跳转到错词',
     noSuggestions: '无建议',
+  },
+  update: {
+    title: '检查更新',
+    currentVersion: '当前版本: v{{version}}',
+    latestVersion: '最新版本: {{version}}',
+    publishedAt: '发布时间: {{date}}',
+    openRelease: '前往下载',
+    upToDate: '当前已是最新版本',
+    checking: '正在检查...',
+    releaseNotes: '更新说明',
+    close: '关闭',
+    error: {
+      title: '检查更新失败',
+      apiError: '无法获取版本信息 (HTTP {{status}})',
+      networkError: '网络错误，请检查连接',
+    },
   },
 };
 

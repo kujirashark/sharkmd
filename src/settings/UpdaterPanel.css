@@ -1,0 +1,108 @@
+.updater-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 360px;
+}
+
+.updater-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 0;
+  color: var(--muted, #6b7280);
+  font-size: 14px;
+}
+
+.updater-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border, #e5e7eb);
+  border-top-color: var(--accent, #2563eb);
+  border-radius: 50%;
+  animation: updater-spin 0.7s linear infinite;
+}
+
+@keyframes updater-spin {
+  to { transform: rotate(360deg); }
+}
+
+.updater-state {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.updater-headline {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg, #1f2328);
+}
+
+.updater-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+}
+
+.updater-notes {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--code-bg, #f6f8fa);
+}
+
+.updater-notes summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  user-select: none;
+  outline: none;
+}
+
+.updater-notes-body {
+  margin: 8px 0 0;
+  padding: 0;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--fg, #1f2328);
+}
+
+.updater-error .updater-headline {
+  color: var(--danger, #c0392b);
+}
+
+.updater-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.updater-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 4px;
+  background: var(--panel-bg, #ffffff);
+  color: var(--fg, #1f2328);
+  cursor: pointer;
+}
+
+.updater-btn:hover {
+  background: var(--hover-bg, #f3f4f6);
+}
+
+.updater-btn-primary {
+  background: var(--accent, #2563eb);
+  border-color: var(--accent, #2563eb);
+  color: #ffffff;
+}
+
+.updater-btn-primary:hover {
+  filter: brightness(1.08);
+}

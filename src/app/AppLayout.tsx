@@ -20,6 +20,7 @@ import type { Editor as TiptapEditor } from '@tiptap/core';
 import type { SearchPanelHandle } from '../sidebar/SearchPanel';
 import type { Misspell } from '../editor/extensions/spell-check/scan';
 import type { SpellCheckStorage } from '../editor/extensions/spell-check';
+import { UpdaterPanel } from '../settings/UpdaterPanel';
 
 export function AppLayout() {
   const { t } = useTranslation();
@@ -45,6 +46,9 @@ export function AppLayout() {
   // every editor update so the SpellPanel always renders fresh results
   // without owning its own subscription.
   const [misspellings, setMisspellings] = useState<Misspell[]>([]);
+  // Help → Check for Updates… dialog. Lives at the AppLayout level so
+  // the menu bar can open it without coupling MenuBar to UpdaterPanel.
+  const [showUpdater, setShowUpdater] = useState(false);
 
   useEffect(() => {
     tauri.getSettings().then((s) => {
@@ -242,6 +246,7 @@ export function AppLayout() {
         onOpenFind={() => setFindOpen(true)}
         spellcheckEnabled={spellcheckEnabled}
         onToggleSpell={toggleSpell}
+        onCheckUpdate={() => setShowUpdater(true)}
       />
       <TabsBar />
       <div className="main">
@@ -321,6 +326,7 @@ export function AppLayout() {
         </main>
       </div>
       <StatusBar editor={editor} />
+      <UpdaterPanel open={showUpdater} onClose={() => setShowUpdater(false)} />
     </div>
   );
 }
