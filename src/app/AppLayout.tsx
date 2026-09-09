@@ -12,7 +12,7 @@ import { MenuBar } from './MenuBar';
 import { StatusBar } from './StatusBar';
 import { useTabsStore } from '../tabs/store';
 import { tauri } from '../tauri/client';
-import { parseMarkdown } from '../editor/bridge';
+import { parseMarkdown, serializeMarkdown } from '../editor/bridge';
 import { createAutoSave } from '../autosave/manager';
 import { useThemeStore, type ThemeName } from '../theme/store';
 import i18n from '../i18n';
@@ -71,11 +71,17 @@ export function AppLayout() {
   }, [rootPath]);
 
   // Ctrl+O shortcut (open single file) + Ctrl+Shift+F (focus search panel)
+  // + Ctrl+S (save current tab) + Ctrl+N (new file).
+  // We register the listener once and read the latest callbacks via refs so
+  // the dependency order doesn't trip a TDZ ReferenceError when callbacks
+  // below are still being initialised on first render.
+  const openSingleFileRef = useRef<() => Promise<void>>(async () => {});
+  const handleSaveRef = useRef<() => void>(() => {});
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O') && !e.shiftKey) {
         e.preventDefault();
-        openSingleFile();
+        openSingleFileRef.current();
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'f' || e.key === 'F')) {
@@ -83,6 +89,12 @@ export function AppLayout() {
         setSidebarTab('search');
         // Wait for React to render the SearchPanel before focusing its input.
         window.setTimeout(() => searchPanelRef.current?.focus(), 0);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        handleSaveRef.current();
+        return;
       }
     };
     window.addEventListener('keydown', onKey);
@@ -145,6 +157,11 @@ export function AppLayout() {
       openFileByPath(selected);
     }
   }, [rootPath, t]);
+  // Keep the global Ctrl+O listener's reference in sync with the latest
+  // closure so it always sees the current `t` / `rootPath`.
+  useEffect(() => {
+    openSingleFileRef.current = openSingleFile;
+  }, [openSingleFile]);
 
   const openFileByPath = useCallback(async (path: string, jumpTo?: { line: number; col: number }) => {
     try {
@@ -172,6 +189,25 @@ export function AppLayout() {
     });
     if (typeof selected === 'string' && selected) setRootPath(selected);
   }, [rootPath, t]);
+
+  // Save the active tab's content to disk. Wired to both the File → Save
+  // menu item and the Ctrl+S global shortcut.
+  const handleSave = useCallback(() => {
+    if (!editor || !activeId) return;
+    const current = useTabsStore.getState().tabs.find((t) => t.id === activeId);
+    if (!current) return;
+    const md = serializeMarkdown(editor.getJSON());
+    tauri.saveFile(current.path, md).then((res) => {
+      useTabsStore.getState().setMtime(current.id, res.mtimeMs);
+      // dirty=false so the tab stops showing the unsaved marker.
+      useTabsStore.getState().updateContent(current.id, current.content, false);
+    }).catch((e) => {
+      window.alert(t('message.saveFailure', { error: String(e) }));
+    });
+  }, [editor, activeId, t]);
+  useEffect(() => {
+    handleSaveRef.current = handleSave;
+  }, [handleSave]);
 
   // Click outline → scroll editor to that heading
   const handleOutlineClick = useCallback((h: Heading) => {
