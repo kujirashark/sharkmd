@@ -89,7 +89,7 @@ describe('<UpdaterPanel>', () => {
     // Initially shows checking text
     expect(screen.getByText(/Checking/i)).toBeTruthy();
     await waitFor(() => {
-      expect(screen.getByText(/latest version/i)).toBeTruthy();
+      expect(screen.getByTestId('updater-uptodate-headline')).toBeTruthy();
     });
     // Open Release button should NOT exist when up-to-date
     expect(screen.queryByTestId('updater-open-release')).toBeNull();
@@ -158,7 +158,7 @@ describe('<UpdaterPanel>', () => {
     });
     const onClose = vi.fn();
     const { rerender } = render(<UpdaterPanel open onClose={onClose} />);
-    await waitFor(() => screen.getByText(/latest version/i));
+    await waitFor(() => screen.getByTestId('updater-uptodate-headline'));
     expect(global.fetch).toHaveBeenCalledTimes(1);
 
     rerender(<UpdaterPanel open={false} onClose={onClose} />);
@@ -195,7 +195,7 @@ describe('<UpdaterPanel>', () => {
     });
     const onClose = vi.fn();
     const { rerender } = render(<UpdaterPanel open onClose={onClose} />);
-    await waitFor(() => screen.getByText(/latest version/i));
+    await waitFor(() => screen.getByTestId('updater-uptodate-headline'));
     // Trigger a fast re-mount
     await act(async () => {
       rerender(<UpdaterPanel open={false} onClose={onClose} />);

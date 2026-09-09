@@ -1,23 +1,118 @@
 .updater-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 360px;
+  gap: 14px;
+  min-width: 380px;
+  max-width: 520px;
+  padding: 4px 4px 8px;
 }
 
-.updater-loading {
+/* ── Shared state shell ─────────────────────────────────────── */
+.updater-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 12px 4px 4px;
+}
+
+.updater-state-good .updater-headline {
+  color: var(--fg, #1f2328);
+}
+
+.updater-state-bad .updater-headline {
+  color: var(--danger, #c0392b);
+}
+
+.updater-headline {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.updater-version-tag {
+  margin: 0;
+  padding: 2px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft, #dbeafe);
+  color: var(--accent, #0969da);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.updater-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted, #6b7280);
+}
+
+.updater-hint {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--code-bg, #f6f8fa);
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--muted, #4b5563);
+  line-height: 1.5;
+}
+
+/* ── Icon badges ────────────────────────────────────────────── */
+.updater-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.updater-icon-good {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.updater-icon-bad {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ── Version row (newer state) ─────────────────────────────── */
+.updater-version-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 0;
-  color: var(--muted, #6b7280);
-  font-size: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.updater-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--border, #e5e7eb);
+.updater-version-current {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--accent-soft, #dbeafe);
+  color: var(--accent, #0969da);
+}
+
+.updater-version-mine {
+  background: var(--code-bg, #f6f8fa);
+  color: var(--muted, #6b7280);
+}
+
+.updater-version-arrow {
+  font-size: 16px;
+  color: var(--muted, #6b7280);
+}
+
+/* ── Loading spinner ────────────────────────────────────────── */
+.updater-spinner-large {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border, #e5e7eb);
   border-top-color: var(--accent, #2563eb);
   border-radius: 50%;
   animation: updater-spin 0.7s linear infinite;
@@ -27,74 +122,63 @@
   to { transform: rotate(360deg); }
 }
 
-.updater-state {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.updater-headline {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--fg, #1f2328);
-}
-
-.updater-meta {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted, #6b7280);
-}
-
+/* ── Release notes collapsible ──────────────────────────────── */
 .updater-notes {
+  width: 100%;
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: var(--code-bg, #f6f8fa);
+  text-align: left;
 }
 
 .updater-notes summary {
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   user-select: none;
   outline: none;
+  color: var(--fg, #1f2328);
 }
 
 .updater-notes-body {
-  margin: 8px 0 0;
-  padding: 0;
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  background: var(--panel-bg, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
   color: var(--fg, #1f2328);
+  max-height: 220px;
+  overflow-y: auto;
 }
 
-.updater-error .updater-headline {
-  color: var(--danger, #c0392b);
-}
-
+/* ── Actions row ───────────────────────────────────────────── */
 .updater-actions {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 8px;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
 }
 
 .updater-btn {
-  padding: 6px 14px;
-  font-size: 13px;
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 4px;
+  padding: 8px 18px;
+  font-size: 13.5px;
+  font-weight: 500;
+  border: 1px solid var(--border, #d0d7de);
+  border-radius: 6px;
   background: var(--panel-bg, #ffffff);
   color: var(--fg, #1f2328);
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
 }
 
 .updater-btn:hover {
-  background: var(--hover-bg, #f3f4f6);
+  background: var(--bg-hover, #f6f8fa);
 }
 
 .updater-btn-primary {
@@ -104,5 +188,56 @@
 }
 
 .updater-btn-primary:hover {
-  filter: brightness(1.08);
+  background: var(--accent-hover, #1d4ed8);
+  border-color: var(--accent-hover, #1d4ed8);
+}
+
+/* ── Dark mode ─────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .updater-version-tag {
+    background: rgba(96, 165, 250, 0.18);
+    color: #93c5fd;
+  }
+  .updater-version-current {
+    background: rgba(96, 165, 250, 0.18);
+    color: #93c5fd;
+  }
+  .updater-version-mine {
+    background: rgba(255, 255, 255, 0.06);
+    color: #9ca3af;
+  }
+  .updater-icon-good {
+    background: rgba(34, 197, 94, 0.18);
+    color: #86efac;
+  }
+  .updater-icon-bad {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+  }
+  .updater-hint {
+    background: rgba(255, 255, 255, 0.04);
+    color: #cbd5e1;
+  }
+  .updater-notes {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  .updater-notes-body {
+    background: rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e5e7eb;
+  }
+  .updater-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #e5e7eb;
+  }
+  .updater-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .updater-btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+  }
 }

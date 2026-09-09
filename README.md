@@ -418,15 +418,35 @@ Tauri 2 的 WebView2 沙箱阻止弹窗，`window.open()` 和 `window.print()` �
 - [x] **图片管理面板** 侧栏切到"图片"tab，列出 `<fileDir>/assets/`，点击插入 `![name](./assets/...)`
 - [x] **编辑器稳定性修复** Enter 换行（math NodeView `contentEditable={false}`）/ 插入表格保留前文（受控模式深相等守卫）/ 图片粘贴落盘（`MarkdownPaste` 接 `image/*` items）
 
+### ✅ v0.3（已完成）
+- [x] **跨文件搜索** —— Ctrl+Shift+F，工作目录内所有 .md 文件全局搜索；正则 / 大小写切换；结果按文件分组；点击跳转到对应文件 + 行号 + 列
+- [x] **英文 UI + i18n 框架** —— 全 UI 字符串可翻译；菜单新增「语言」切换（zh-CN / en-US）；设置持久化
+- [x] **真多光标** —— `Ctrl+Shift+D`（不用 Ctrl+D 因 WebView2 吞）累积多光标；`Alt+Click` 插入第二光标；`Escape` 折叠回单光标
+- [x] **列选择矩形** —— `Alt+拖拽` 选矩形选区，蓝色高亮；输入多 range 同步
+- [x] **macOS / Linux / Windows 三平台打包** —— universal binary + AppImage + .deb + MSI；GitHub Actions 三平台矩阵 + cargo test
+- [x] **完整三平台图标** —— `.icns` / `.ico` / 多尺寸 `.png`
+
+### ✅ v0.4（已完成）
+- [x] **拼写检查（英文）** —— nspell + Web Worker 异步扫描；错词红色波浪下划线；侧栏"拼写"tab 列出错误列表；一键替换建议；菜单「视图 → 拼写检查」开关
+- [x] **更新检查** —— 菜单「帮助 → 检查更新」调 GitHub Releases API，弹窗显示最新版号 + 发布时间 + release notes + 跳转 GitHub release 页手动下载（v0.4 不签 TAURI 签名密钥）
+- [x] **新增组件** —— `Modal` / `PromptModal`（替换 Tauri 不可靠的 `window.prompt`）+ `UpdaterPanel`
+- [x] **编辑器 bug 修复**（v0.3 修复 + v0.4 新发现）
+  - Enter 不能换行 → MarkdownInputRules 用了错误 API（修）
+  - Enter 后回退原行 → 受控模式深相等 guard
+  - 插入表格清空 → autosave 自身的 fs:external-change 触发 reload（修）
+  - 新建文件没反应 → `if (!editor) return` 守卫 + window.prompt 在 WebView2 被吞
+  - Ctrl+S 不响应 → 全局快捷键监听补全
+  - RecoveryDialog 缺恢复按钮 → Rust 加 read_draft + UI 加 Restore
+
 ### 🚀 v1.0（中期）
 - [ ] **插件系统**：用户自定义扩展
 - [ ] **主题商店**：可下载的 .css 主题
 - [ ] **同步**：本地文件夹 + 云（iCloud / Dropbox / 自建 WebDAV）
 - [ ] **版本历史**：基于 Git 的本地版本
-- [ ] **i18n**：英文 UI
-- [ ] **macOS / Linux 打包与签名**
-- [ ] **跨文件搜索**（v0.2 留口子：FindBar 当前只搜当前文档）
-- [ ] **列选择**（v0.2 留口子：当前是单光标跳到下一匹配）
+- [ ] **macOS / Linux 代码签名 + Apple 公证**
+- [ ] **tauri-plugin-updater 集成**（v0.4 用 Web 跳转代替；v1.0 接签名密钥做 in-app update）
+- [ ] **拼写检查增量扫描**（只扫可见视口，不全文档重扫）
+- [ ] **中文拼写支持**（nspell + dictionary-zh-cn；v0.4 留 placeholder）
 
 ### 🌌 远期
 - [ ] 协同编辑（Yjs / CRDT）
