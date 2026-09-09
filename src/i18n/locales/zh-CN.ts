@@ -55,6 +55,7 @@ const zhCN = {
       sidebar: '侧栏',
       outline: '大纲',
       find: '查找',
+      spellCheck: '拼写检查',
     },
     theme: {
       label: '主题',
@@ -116,6 +117,7 @@ const zhCN = {
     outline: '大纲',
     assets: '图片',
     search: '搜索',
+    spell: '拼写',
     emptyHint: '点击菜单 文件 → 选择工作目录 开始',
     welcomeHint: '用 菜单 → 文件 → 打开文件… 或 Ctrl+O 打开一个 .md',
     welcomeDirHint: '或 菜单 → 文件 → 选择工作目录  浏览文件夹',
@@ -201,6 +203,16 @@ const zhCN = {
   editor: {
     placeholder: '在此输入内容…  试试打 # 空格 = H1，** 加粗 **，``` 代码 ```',
     loading: '编辑器加载中…',
+  },
+  spell: {
+    header_one: '1 个拼写错误',
+    header_other: '{{count}} 个拼写错误',
+    noErrors: '没有发现拼写错误',
+    noDocument: '打开文件后这里会显示拼写错误',
+    dictionaryUnavailable: '词典加载失败：检查网络或重启',
+    suggestions: '建议',
+    jump: '跳转到错词',
+    noSuggestions: '无建议',
   },
 };
 

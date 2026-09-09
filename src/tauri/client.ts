@@ -5,7 +5,7 @@ export interface SaveResult { mtimeMs: number }
 export interface DirEntry { name: string; path: string; isDir: boolean; isMd: boolean }
 export interface DraftEntry { fileId: string; path: string; savedAtMs: number }
 export interface DraftPayload extends DraftEntry { json: string }
-export interface Settings { theme: string; fontSize: number; customCssPath: string | null; lastRootPath?: string | null; language?: string }
+export interface Settings { theme: string; fontSize: number; customCssPath: string | null; lastRootPath?: string | null; language?: string; spellcheckEnabled?: boolean; spellcheckLang?: string }
 export interface AppError { code: string; message: string; detail: string | null }
 export interface MdFileEntry { path: string; relPath: string; size: number; mtimeMs: number }
 export interface SearchMatch { file: string; relPath: string; line: number; col: number; lineText: string; matchText: string }

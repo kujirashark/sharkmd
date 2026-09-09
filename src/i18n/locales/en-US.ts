@@ -47,6 +47,7 @@ const enUS = {
       sidebar: 'Sidebar',
       outline: 'Outline',
       find: 'Find',
+      spellCheck: 'Spell Check',
     },
     theme: {
       label: 'Theme',
@@ -108,6 +109,7 @@ const enUS = {
     outline: 'Outline',
     assets: 'Images',
     search: 'Search',
+    spell: 'Spell',
     emptyHint: 'Click Menu → File → Choose Workspace to start',
     welcomeHint: 'Use Menu → File → Open File… or Ctrl+O to open a .md',
     welcomeDirHint: 'Or Menu → File → Choose Workspace to browse folders',
@@ -193,6 +195,16 @@ const enUS = {
   editor: {
     placeholder: 'Type something… Try # space = H1, **bold**, ```code```',
     loading: 'Editor loading…',
+  },
+  spell: {
+    header_one: '1 misspelling',
+    header_other: '{{count}} misspellings',
+    noErrors: 'No spelling issues found',
+    noDocument: 'Open a file to see spelling issues here',
+    dictionaryUnavailable: 'Dictionary failed to load — check network or restart',
+    suggestions: 'Suggest',
+    jump: 'Jump to misspelled word',
+    noSuggestions: 'No suggestions',
   },
 };
 

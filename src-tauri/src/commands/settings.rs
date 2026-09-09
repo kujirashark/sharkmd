@@ -16,6 +16,16 @@ pub struct Settings {
     /// backend treats this as opaque storage.
     #[serde(default = "default_language")]
     pub language: String,
+    /// Spell-check toggle (v0.4). Defaults to `false` so first-run users
+    /// aren't greeted with red underlines before they confirm the
+    /// dictionary matches their content.
+    #[serde(default)]
+    pub spellcheck_enabled: bool,
+    /// Spell-check dictionary language code (v0.4). Defaults to "en-US"
+    /// since `dictionary-en` is bundled; "zh-CN" is a placeholder until
+    /// a real zh-CN Hunspell dictionary is wired in.
+    #[serde(default = "default_spellcheck_lang")]
+    pub spellcheck_lang: String,
 }
 
 /// Default language used when the field is missing from settings.json.
@@ -24,6 +34,10 @@ pub struct Settings {
 /// cleanly to "zh-CN" instead of erroring.
 fn default_language() -> String {
     "zh-CN".into()
+}
+
+fn default_spellcheck_lang() -> String {
+    "en-US".into()
 }
 
 pub fn settings_path() -> PathBuf {
@@ -40,6 +54,8 @@ pub async fn get_settings() -> AppResult<Settings> {
             custom_css_path: None,
             last_root_path: None,
             language: default_language(),
+            spellcheck_enabled: false,
+            spellcheck_lang: default_spellcheck_lang(),
         });
     }
     let bytes = tokio::fs::read(&p).await?;

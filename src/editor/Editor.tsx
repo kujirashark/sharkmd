@@ -19,6 +19,8 @@ import { MultiCursor } from './extensions/multi-cursor';
 import { ColumnSelection } from './extensions/column-selection';
 import { MathInline, MathDisplay } from './extensions/math-node';
 import { CodeBlockWithMermaid } from './extensions/code-block-node';
+import { SpellCheck, setSpellCheckEnabled } from './extensions/spell-check';
+import type { SpellCheckStorage } from './extensions/spell-check';
 
 export interface EditorProps {
   value: JSONContent;
@@ -33,11 +35,19 @@ export interface EditorProps {
    * once, the value is cleared so subsequent re-renders don't re-jump.
    */
   initialJump?: { line: number; col: number };
+  /**
+   * Spell-check settings from the loaded Settings. SpellCheck is
+   * always installed; the `enabled` flag controls whether the plugin
+   * actually scans text (cheap when off — the Worker is never
+   * constructed). lang defaults to 'en-US' when omitted.
+   */
+  spellcheckEnabled?: boolean;
+  spellcheckLang?: 'en-US' | 'zh-CN';
 }
 
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] };
 
-export function Editor({ value, onChange, onEditorReady, currentFilePath, initialJump }: EditorProps) {
+export function Editor({ value, onChange, onEditorReady, currentFilePath, initialJump, spellcheckEnabled, spellcheckLang }: EditorProps) {
   const { t } = useTranslation();
   // Always initialize with an empty doc; sync real content via useEffect.
   const editor = useEditor({
@@ -59,6 +69,7 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath, initia
       MarkdownKeymap,
       MultiCursor,
       ColumnSelection,
+      SpellCheck.configure({ enabled: !!spellcheckEnabled, lang: spellcheckLang ?? 'en-US' }),
     ],
     content: EMPTY_DOC,
     onUpdate: ({ editor }) => {
@@ -130,6 +141,19 @@ export function Editor({ value, onChange, onEditorReady, currentFilePath, initia
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentFilePath, editor]);
+
+  // Push spell-check enabled/disabled into the plugin's storage. The
+  // plugin itself stays installed (cheap when off) so toggling is
+  // instant and doesn't rebuild the editor.
+  useEffect(() => {
+    if (!editor) return;
+    const storage = editor.storage.spellCheck as SpellCheckStorage | undefined;
+    if (!storage) return;
+    if (storage.enabled !== !!spellcheckEnabled) {
+      setSpellCheckEnabled(editor, !!spellcheckEnabled);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spellcheckEnabled, editor]);
 
   // Mirror the i18n placeholder onto the ProseMirror root as a data
   // attribute, which themes.css reads back via `attr(...)` to populate the

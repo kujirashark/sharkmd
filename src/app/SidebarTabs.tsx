@@ -1,11 +1,14 @@
 import type { RefObject } from 'react';
+import type { Editor } from '@tiptap/core';
+import type { Misspell } from '../editor/extensions/spell-check/scan';
 import { FileTree } from '../sidebar/FileTree';
 import { Outline, type Heading } from '../sidebar/Outline';
 import { AssetsPanel } from '../sidebar/AssetsPanel';
 import { SearchPanel, type SearchPanelHandle } from '../sidebar/SearchPanel';
+import { SpellPanel } from '../sidebar/SpellPanel';
 import { useT } from '../i18n/use-translation';
 
-export type SidebarTab = 'files' | 'outline' | 'assets' | 'search';
+export type SidebarTab = 'files' | 'outline' | 'assets' | 'search' | 'spell';
 
 export interface SidebarTabsProps {
   active: SidebarTab;
@@ -24,11 +27,17 @@ export interface SidebarTabsProps {
    * to the search tab.
    */
   searchPanelRef: RefObject<SearchPanelHandle>;
+  /**
+   * Live misspell list for the SpellPanel tab. Read from the active
+   * editor's storage.spellCheck.misspellings by AppLayout.
+   */
+  editor: Editor | null;
+  misspellings: Misspell[];
 }
 
 export function SidebarTabs({
   active, onChange, rootPath, headings, onOpen, onCreate, onOutlineClick,
-  activeFilePath, onInsertAsset, searchPanelRef,
+  activeFilePath, onInsertAsset, searchPanelRef, editor, misspellings,
 }: SidebarTabsProps) {
   const t = useT();
   return (
@@ -58,6 +67,12 @@ export function SidebarTabs({
         >
           {t('sidebar.search')}
         </button>
+        <button
+          className={`sidebar-tab ${active === 'spell' ? 'active' : ''}`}
+          onClick={() => onChange('spell')}
+        >
+          {t('sidebar.spell')}
+        </button>
       </div>
       {active === 'files' && (
         <FileTree rootPath={rootPath} onOpen={onOpen} onCreate={onCreate} />
@@ -70,6 +85,9 @@ export function SidebarTabs({
       )}
       {active === 'search' && (
         <SearchPanel rootPath={rootPath} onOpen={onOpen} ref={searchPanelRef} />
+      )}
+      {active === 'spell' && (
+        <SpellPanel editor={editor} misspellings={misspellings} />
       )}
     </>
   );

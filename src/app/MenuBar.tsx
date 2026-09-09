@@ -22,6 +22,10 @@ export interface MenuBarProps {
   onToggleSidebar: () => void;
   onToggleOutline: () => void;
   onOpenFind: () => void;
+  // Spell-check toggle (view menu). Mirrors the `✓ ` prefix pattern used
+  // for sidebar / outline / theme entries.
+  spellcheckEnabled: boolean;
+  onToggleSpell: () => void;
 }
 
 interface MenuItem {
@@ -44,6 +48,7 @@ interface MenuDef {
 export function MenuBar({
   editor, onChooseDir, onOpenFile, activeId,
   showSidebar, showOutline, onToggleSidebar, onToggleOutline, onOpenFind,
+  spellcheckEnabled, onToggleSpell,
 }: MenuBarProps) {
   const { t } = useTranslation();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -237,6 +242,7 @@ export function MenuBar({
         { id: 'view-outline', label: (showOutline ? '✓ ' : '') + t('menu.view.outline'), run: onToggleOutline },
         { id: 'view-sep', separator: true, label: '' },
         { id: 'view-find', label: t('menu.view.find'), shortcut: 'Ctrl+F', run: () => onOpenFind() },
+        { id: 'view-spellcheck', label: (spellcheckEnabled ? '✓ ' : '') + t('menu.view.spellCheck'), run: onToggleSpell },
       ],
     },
     {

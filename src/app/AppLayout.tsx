@@ -18,6 +18,8 @@ import { useThemeStore, type ThemeName } from '../theme/store';
 import i18n from '../i18n';
 import type { Editor as TiptapEditor } from '@tiptap/core';
 import type { SearchPanelHandle } from '../sidebar/SearchPanel';
+import type { Misspell } from '../editor/extensions/spell-check/scan';
+import type { SpellCheckStorage } from '../editor/extensions/spell-check';
 
 export function AppLayout() {
   const { t } = useTranslation();
@@ -31,15 +33,28 @@ export function AppLayout() {
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('files');
   const [showSidebar, setShowSidebar] = useState(true);
   const [findOpen, setFindOpen] = useState(false);
+  // Spell-check settings. Loaded once at startup; persisted via the
+  // existing Settings schema. Defaults are explicit here so we don't
+  // depend on the worker's lifecycle to clear the flag.
+  const [spellcheckEnabled, setSpellcheckEnabled] = useState(false);
+  const [spellcheckLang, setSpellcheckLang] = useState<'en-US' | 'zh-CN'>('en-US');
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   const lastSaveAtRef = useRef<Map<string, number>>(new Map());
   const searchPanelRef: RefObject<SearchPanelHandle> = useRef<SearchPanelHandle>(null);
+  // Mirror of editor.storage.spellCheck.misspellings. We re-read it on
+  // every editor update so the SpellPanel always renders fresh results
+  // without owning its own subscription.
+  const [misspellings, setMisspellings] = useState<Misspell[]>([]);
 
   useEffect(() => {
     tauri.getSettings().then((s) => {
       useThemeStore.getState().setTheme(s.theme as ThemeName);
       if (s.lastRootPath) setRootPath(s.lastRootPath);
       if (s.language) i18n.changeLanguage(s.language).catch(() => null);
+      setSpellcheckEnabled(!!s.spellcheckEnabled);
+      if (s.spellcheckLang === 'en-US' || s.spellcheckLang === 'zh-CN') {
+        setSpellcheckLang(s.spellcheckLang);
+      }
     }).catch(() => null);
   }, []);
 
@@ -180,6 +195,39 @@ export function AppLayout() {
   const active = tabs.find((t) => t.id === activeId);
   const headings: Heading[] = active ? extractHeadings(active.content) : [];
 
+  // Mirror the editor's spell storage into React state so the
+  // SpellPanel re-renders on every Worker reply. The editor's storage
+  // updates trigger a publish via subscribeMisspellings().
+  useEffect(() => {
+    if (!editor) {
+      setMisspellings([]);
+      return;
+    }
+    const storage = editor.storage.spellCheck as SpellCheckStorage | undefined;
+    if (storage) setMisspellings(storage.misspellings);
+    let unsub: (() => void) | null = null;
+    void import('../editor/extensions/spell-check').then((mod) => {
+      unsub = mod.subscribeMisspellings((list) => setMisspellings(list));
+    });
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [editor]);
+
+  // Toggle spell-check + persist. Read latest settings from disk so
+  // concurrent edits (e.g. language switch writing settings) aren't
+  // clobbered.
+  const toggleSpell = useCallback(async () => {
+    const next = !spellcheckEnabled;
+    setSpellcheckEnabled(next);
+    try {
+      const s = await tauri.getSettings();
+      await tauri.setSettings({ ...s, spellcheckEnabled: next });
+    } catch {
+      // ignore — toggle still applies in-memory this session
+    }
+  }, [spellcheckEnabled]);
+
   return (
     <div className="app-layout">
       <MenuBar
@@ -192,6 +240,8 @@ export function AppLayout() {
         onToggleSidebar={() => setShowSidebar((v) => !v)}
         onToggleOutline={() => setShowSidebar((v) => !v)}
         onOpenFind={() => setFindOpen(true)}
+        spellcheckEnabled={spellcheckEnabled}
+        onToggleSpell={toggleSpell}
       />
       <TabsBar />
       <div className="main">
@@ -227,6 +277,8 @@ export function AppLayout() {
                 }}
                 onOutlineClick={handleOutlineClick}
                 searchPanelRef={searchPanelRef}
+                editor={editor}
+                misspellings={misspellings}
               />
             ) : (
               <>
@@ -255,6 +307,8 @@ export function AppLayout() {
                 onEditorReady={setEditor}
                 currentFilePath={active.path}
                 initialJump={active.initialJump}
+                spellcheckEnabled={spellcheckEnabled}
+                spellcheckLang={spellcheckLang}
               />
             ) : (
               <div style={{ padding: 40, color: 'var(--muted)', textAlign: 'center' }}>
