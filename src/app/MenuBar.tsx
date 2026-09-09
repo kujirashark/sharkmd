@@ -111,7 +111,11 @@ export function MenuBar({
       label: t('menu.file.label'),
       items: [
         { id: 'file-new', label: t('menu.file.new'), shortcut: 'Ctrl+N', run: () => {
-          if (!editor) return;
+          // Don't gate on `editor` — when no tab is open <Editor> is
+          // unmounted and `editor` is null, so an early-return here
+          // silently swallows the click. Creating a file doesn't need
+          // an editor instance; createNewFile writes the empty file
+          // via Rust and opens it as a new tab.
           setPendingNewFileName('untitled.md');
         } },
         { id: 'file-choose-dir', label: t('menu.file.chooseDir'), run: onChooseDir },
